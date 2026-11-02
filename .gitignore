@@ -1,0 +1,6 @@
+# 학생 개인정보가 들어 있는 파일은 저장소에 올리지 않습니다
+*.xlsx
+*.xls
+*.json
+!package.json
+node_modules/

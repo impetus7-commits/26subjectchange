@@ -1,0 +1,1088 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>수강신청 변경 검토</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap">
+<style>
+:root{
+  --bg:#f4f5f2; --panel:#ffffff; --panel2:#f9faf7; --ink:#1d2421; --ink2:#4a5550; --ink3:#7b8580;
+  --line:#dfe3dc; --line2:#c9cfc6;
+  --accent:#1f6f5c; --accent-ink:#ffffff; --accent-soft:#e2f0eb;
+  --add:#1d7a3e; --add-soft:#e3f3e7; --del:#b4372f; --del-soft:#f8e4e1;
+  --warn:#a86400; --warn-soft:#fdf0d8; --pend:#5a55b0; --pend-soft:#ebeafb;
+  --bar:#8fb8a9; --bar2:#1f6f5c;
+  --shadow:0 1px 2px rgba(20,30,25,.06),0 4px 14px rgba(20,30,25,.05);
+  --r:12px;
+  font-size:15px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#141816; --panel:#1c211f; --panel2:#222826; --ink:#e7ece9; --ink2:#b5beb9; --ink3:#87918c;
+    --line:#2f3633; --line2:#3c4440;
+    --accent:#4fb596; --accent-ink:#0d1a15; --accent-soft:#1f3a31;
+    --add:#5ccc85; --add-soft:#1d3426; --del:#ef8077; --del-soft:#3c2220;
+    --warn:#f0b45a; --warn-soft:#3a2d17; --pend:#a9a4f5; --pend-soft:#2a2945;
+    --bar:#3f7565; --bar2:#4fb596; --shadow:none;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#141816; --panel:#1c211f; --panel2:#222826; --ink:#e7ece9; --ink2:#b5beb9; --ink3:#87918c;
+  --line:#2f3633; --line2:#3c4440;
+  --accent:#4fb596; --accent-ink:#0d1a15; --accent-soft:#1f3a31;
+  --add:#5ccc85; --add-soft:#1d3426; --del:#ef8077; --del-soft:#3c2220;
+  --warn:#f0b45a; --warn-soft:#3a2d17; --pend:#a9a4f5; --pend-soft:#2a2945;
+  --bar:#3f7565; --bar2:#4fb596; --shadow:none;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:"Noto Sans KR","Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+a{color:var(--accent)}
+.wrap{max-width:1400px;margin:0 auto;padding:0 16px}
+
+/* ── 상단 ── */
+header.top{background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
+.top-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:12px 0}
+.brand{display:flex;flex-direction:column;margin-right:auto;min-width:0}
+.brand b{font-size:1.15rem;font-weight:800;letter-spacing:-.02em}
+.brand small{color:var(--ink3);font-size:.8rem}
+.seg{display:inline-flex;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:3px;gap:2px}
+.seg button{border:0;background:transparent;padding:7px 14px;border-radius:8px;font-weight:600;color:var(--ink2);white-space:nowrap}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.seg button:disabled{opacity:.4;cursor:not-allowed}
+.seg-label{font-size:.75rem;color:var(--ink3);margin-right:4px;white-space:nowrap}
+.ctl{display:flex;align-items:center;gap:6px}
+nav.tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}
+nav.tabs button{border:0;background:transparent;padding:10px 14px;border-bottom:3px solid transparent;font-weight:600;color:var(--ink2);white-space:nowrap}
+nav.tabs button[aria-current="page"]{color:var(--accent);border-bottom-color:var(--accent)}
+nav.tabs .badge{margin-left:4px}
+.icon-btn{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:6px 9px;color:var(--ink2)}
+
+main{padding:18px 0 60px}
+.ctx-line{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;margin-bottom:14px}
+.ctx-line h1{font-size:1.35rem;margin:0;letter-spacing:-.02em}
+.ctx-line span{color:var(--ink3);font-size:.9rem}
+
+/* ── 공통 ── */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+.card-h{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.card-h h2,.card-h h3{margin:0;font-size:1rem}
+.card-b{padding:14px 16px}
+.muted{color:var(--ink3)}
+.small{font-size:.85rem}
+.btn{border:1px solid var(--line2);background:var(--panel);border-radius:9px;padding:8px 14px;font-weight:600;color:var(--ink)}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.ok{background:var(--add);border-color:var(--add);color:#fff}
+.btn.no{color:var(--del);border-color:color-mix(in srgb,var(--del) 45%,var(--line))}
+.btn.sm{padding:4px 10px;font-size:.85rem;border-radius:7px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+.badge{display:inline-block;font-size:.75rem;font-weight:700;padding:1px 8px;border-radius:999px;background:var(--panel2);border:1px solid var(--line);color:var(--ink2);white-space:nowrap}
+.badge.pend{background:var(--pend-soft);color:var(--pend);border-color:transparent}
+.badge.ok{background:var(--add-soft);color:var(--add);border-color:transparent}
+.badge.no{background:var(--del-soft);color:var(--del);border-color:transparent}
+.badge.warn{background:var(--warn-soft);color:var(--warn);border-color:transparent}
+input[type=text],input[type=search],input[type=number],input[type=date],select,textarea{border:1px solid var(--line2);background:var(--panel);border-radius:8px;padding:7px 10px;min-width:0}
+textarea{width:100%;resize:vertical}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.grid{display:grid;gap:14px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:14px}
+.kpi{padding:14px 16px}
+.kpi .v{font-size:1.7rem;font-weight:800;letter-spacing:-.02em;line-height:1.2}
+.kpi .l{color:var(--ink3);font-size:.82rem}
+.kpi.attn .v{color:var(--warn)}
+.empty{padding:40px 16px;text-align:center;color:var(--ink3)}
+table{border-collapse:collapse;width:100%}
+th,td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-size:.8rem;color:var(--ink3);font-weight:700;background:var(--panel2);position:sticky;top:0}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+.tbl-wrap{overflow:auto;max-height:70vh}
+.chip-in{display:inline-block;padding:1px 7px;border-radius:6px;font-size:.82rem;margin:1px 2px 1px 0;white-space:nowrap}
+.chip-in.add{background:var(--add-soft);color:var(--add)}
+.chip-in.del{background:var(--del-soft);color:var(--del);text-decoration:line-through}
+.chip-in.keep{background:var(--panel2);color:var(--ink2);border:1px solid var(--line)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:10px;z-index:99;font-weight:600;max-width:calc(100vw - 32px);box-shadow:0 6px 24px rgba(0,0,0,.25)}
+.notice{border-radius:10px;padding:10px 14px;font-size:.9rem}
+.notice.warn{background:var(--warn-soft);color:var(--warn)}
+.notice.err{background:var(--del-soft);color:var(--del)}
+.notice.ok{background:var(--add-soft);color:var(--add)}
+.notice.info{background:var(--accent-soft);color:var(--ink)}
+.notice ul{margin:4px 0 0;padding-left:18px}
+
+/* ── 시작 화면 ── */
+.start{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+.drop{border:2px dashed var(--line2);border-radius:var(--r);padding:22px;text-align:center;background:var(--panel);transition:.15s}
+.drop.on{border-color:var(--accent);background:var(--accent-soft)}
+.drop.loaded{border-style:solid;border-color:var(--accent)}
+.drop h3{margin:0 0 4px;font-size:1.1rem}
+.drop .big{font-size:2rem;font-weight:800;color:var(--accent);margin:6px 0}
+.steps{counter-reset:s;list-style:none;padding:0;margin:0;display:grid;gap:10px}
+.steps li{counter-increment:s;display:flex;gap:12px;align-items:flex-start}
+.steps li::before{content:counter(s);flex:none;width:26px;height:26px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-weight:800;font-size:.85rem}
+
+/* ── 현황 ── */
+.groups{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:14px}
+.grp-meta{margin-left:auto;font-size:.8rem;color:var(--ink3)}
+.subj-row{display:grid;grid-template-columns:minmax(150px,1.3fr) 2fr 84px;gap:10px;align-items:center;padding:5px 0;border:0;background:transparent;width:100%;text-align:left;border-radius:6px}
+.subj-row:hover{background:var(--panel2)}
+.subj-row .nm{font-size:.9rem;line-height:1.35;word-break:keep-all}
+.subj-row .nm .badge{margin-left:2px}
+.bar{position:relative;height:14px;background:var(--panel2);border-radius:4px;overflow:hidden;border:1px solid var(--line)}
+.bar i{position:absolute;left:0;top:0;bottom:0;background:var(--bar2);border-radius:3px 0 0 3px}
+.bar i.pend{background:repeating-linear-gradient(45deg,var(--pend) 0 4px,transparent 4px 7px);opacity:.75}
+.bar .min{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--warn)}
+.cnt{text-align:right;font-variant-numeric:tabular-nums;font-size:.9rem;white-space:nowrap}
+.cnt b{font-weight:800}
+.d-up{color:var(--add);font-weight:700;font-size:.8rem}
+.d-dn{color:var(--del);font-weight:700;font-size:.8rem}
+.d-pd{color:var(--pend);font-size:.78rem}
+.subj-row.low .nm{color:var(--warn);font-weight:700}
+.subj-row.over .nm{color:var(--del);font-weight:700}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:.8rem;color:var(--ink3);margin:0 0 12px}
+.legend i{display:inline-block;width:18px;height:10px;border-radius:2px;vertical-align:middle;margin-right:5px}
+
+/* ── 학생 검토 ── */
+.split{display:grid;grid-template-columns:330px 1fr;gap:14px;align-items:start}
+.stu-list{max-height:calc(100vh - 230px);overflow:auto}
+.stu-filter{display:grid;gap:8px;padding:12px;border-bottom:1px solid var(--line)}
+.stu-filter .row{display:flex;gap:6px}
+.stu-filter .row>*{flex:1}
+.stu{display:flex;gap:10px;align-items:center;padding:8px 12px;border:0;border-bottom:1px solid var(--line);background:transparent;width:100%;text-align:left}
+.stu:hover{background:var(--panel2)}
+.stu[aria-selected="true"]{background:var(--accent-soft)}
+.stu .no{font-variant-numeric:tabular-nums;color:var(--ink3);font-size:.85rem;width:48px}
+.stu .nm{font-weight:600;flex:1;min-width:0}
+.stu .marks{display:flex;gap:4px}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.dot.pend{background:var(--pend)} .dot.ok{background:var(--add)} .dot.bad{background:var(--del)}
+.stu-head{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.stu-head .nm{font-size:1.3rem;font-weight:800}
+.sem-blk{border:1px solid var(--line);border-radius:10px;margin-bottom:12px;overflow:hidden}
+.sem-blk>.h{display:flex;align-items:center;gap:10px;padding:9px 14px;background:var(--panel2);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.sem-blk>.h b{font-size:.98rem}
+.sem-blk.cur{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.sem-blk.ro .chip{cursor:default}
+.grp{padding:10px 14px;border-bottom:1px dashed var(--line)}
+.grp:last-child{border-bottom:0}
+.grp-h{display:flex;gap:8px;align-items:center;margin-bottom:6px;font-size:.88rem}
+.grp-h .need{font-weight:700}
+.grp-h .need.bad{color:var(--del)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line2);background:var(--panel);border-radius:999px;padding:5px 12px;font-size:.88rem;position:relative;display:inline-flex;gap:6px;align-items:center}
+.chip .n{font-size:.72rem;color:var(--ink3);font-variant-numeric:tabular-nums}
+.chip.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.chip.on .n{color:inherit;opacity:.75}
+.chip.was{box-shadow:inset 0 0 0 2px var(--ink3)}
+.chip.on.was{box-shadow:none}
+.chip.add{background:var(--add);border-color:var(--add);color:#fff}
+.chip.add .n{color:#fff}
+.chip.del{background:var(--del-soft);border-color:var(--del);color:var(--del);text-decoration:line-through}
+.chip.low:not(.on)::after{content:"";position:absolute;top:2px;right:3px;width:6px;height:6px;border-radius:50%;background:var(--warn)}
+.diff-box{display:grid;gap:10px;padding:12px 14px;background:var(--panel2);border-top:1px solid var(--line)}
+.form-grid{display:grid;grid-template-columns:110px 1fr;gap:8px 12px;align-items:center}
+.req-hist{display:grid;gap:8px}
+.req-item{border:1px solid var(--line);border-radius:9px;padding:8px 12px;font-size:.88rem}
+.ro-sum{padding:10px 14px;font-size:.88rem}
+
+/* ── 설정 ── */
+.set-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:14px}
+.rule-tbl input{width:70px}
+kbd{font-family:inherit;font-size:.8rem;border:1px solid var(--line2);border-bottom-width:2px;border-radius:5px;padding:0 5px;background:var(--panel2)}
+
+/* ── 인쇄 ── */
+#print-area{display:none}
+@media print{
+  body{background:#fff;color:#000}
+  header.top,main,.toast{display:none!important}
+  #print-area{display:block;font-size:11pt}
+  #print-area h1{font-size:16pt;text-align:center;margin:0 0 12pt}
+  #print-area table{border-collapse:collapse;width:100%;margin-bottom:10pt}
+  #print-area th,#print-area td{border:1px solid #444;padding:4pt 6pt;position:static;background:none;color:#000}
+  #print-area .sign{display:grid;grid-template-columns:repeat(3,1fr);gap:10pt;margin-top:24pt}
+  #print-area .sign div{border-top:1px solid #000;padding-top:4pt;text-align:center}
+  #print-area .pg{page-break-after:always}
+  #print-area .pg:last-child{page-break-after:auto}
+}
+
+@media (max-width:900px){
+  .split{grid-template-columns:1fr}
+  .stu-list{max-height:320px}
+  .groups{grid-template-columns:1fr}
+}
+@media (max-width:560px){
+  .subj-row{grid-template-columns:1fr 70px;}
+  .subj-row .bar{grid-column:1 / -1;order:3}
+  .form-grid{grid-template-columns:1fr}
+  .seg button{padding:6px 10px}
+  .seg button .small{display:none}
+  .brand{flex-basis:100%}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="top-row">
+      <div class="brand"><b>2027 수강신청 변경 검토</b><small id="brand-sub">NEIS 수강신청 일괄등록 파일 기반</small></div>
+      <div class="ctl"><span class="seg-label">학년</span><div class="seg" id="seg-grade"></div></div>
+      <div class="ctl"><span class="seg-label">학기</span><div class="seg" id="seg-sem"></div></div>
+      <button class="icon-btn" id="btn-theme" title="화면 밝기 바꾸기" aria-label="화면 밝기 바꾸기">◐</button>
+    </div>
+    <nav class="tabs" id="tabs"></nav>
+  </div>
+</header>
+<main><div class="wrap" id="view"></div></main>
+<div id="print-area"></div>
+
+<script>/*__XLSX__*/</script>
+<script>
+"use strict";
+/* ============================================================
+   2027 수강신청 변경 검토 시스템
+   - NEIS '수강신청 일괄등록' 엑셀(1행 안내, 2행 학기, 3행 선택그룹, 4행 과목, 5행 고유번호, 6행~ 학생)을 읽음
+   - 모든 자료는 이 브라우저 안에만 저장됨(서버 전송 없음)
+   ============================================================ */
+const TARGET_YEAR = 2027;
+const LS_PREFIX = "scr2027:";
+const SLOTS = {
+  g2: { entry: 2026, grade: 2 },
+  g3: { entry: 2025, grade: 3 },
+};
+const REASONS = ["진로(희망 학과) 변경", "학업 부담·적성", "대학 권장과목 반영", "시간표·정원 조정", "기타"];
+const DEFAULT_SETTINGS = { min: 13, max: 0, pick: {}, maxBy: {} };
+
+const S = {
+  slot: {},              // g2/g3 → 데이터
+  ui: { grade: "g2", sem: 1, view: "dash", stu: null, q: "", cls: "", flt: "all", rq: "", rst: "pend", subj: null, rosterCls: "" },
+  draft: null,           // 학생 검토 중 임시 선택
+};
+
+/* ---------- 저장소 ---------- */
+const store = {
+  get(k){ try{ const v = localStorage.getItem(LS_PREFIX + k); return v ? JSON.parse(v) : null; }catch(e){ return null; } },
+  set(k, v){ try{ localStorage.setItem(LS_PREFIX + k, JSON.stringify(v)); return true; }catch(e){ toast("브라우저 저장 공간에 저장하지 못했습니다. [설정·내보내기]에서 백업 파일을 꼭 저장하세요."); return false; } },
+  del(k){ try{ localStorage.removeItem(LS_PREFIX + k); }catch(e){} },
+};
+function saveSlot(key){
+  const d = S.slot[key]; if(!d) return;
+  store.set("slot:" + key, { fileName: d.fileName, b64: d.b64, settings: d.settings, requests: d.requests, loadedAt: d.loadedAt });
+}
+
+/* ---------- 유틸 ---------- */
+const $ = (s, el=document) => el.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const today = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0"); };
+const nowStamp = () => new Date().toISOString();
+const ymd = () => today().replace(/-/g, "");
+let toastTimer;
+function toast(msg){
+  let t = $(".toast"); if(!t){ t = document.createElement("div"); t.className = "toast"; t.setAttribute("role","status"); document.body.appendChild(t); }
+  t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => t.hidden = true, 3200);
+}
+function b64FromBuf(buf){ let s = ""; const a = new Uint8Array(buf); for(let i=0;i<a.length;i+=0x8000) s += String.fromCharCode.apply(null, a.subarray(i, i+0x8000)); return btoa(s); }
+function bufFromB64(b64){ const s = atob(b64); const a = new Uint8Array(s.length); for(let i=0;i<s.length;i++) a[i] = s.charCodeAt(i); return a; }
+const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+const semLabel = sem => { const [g, h] = sem.split("-"); return `${g}학년 ${h}학기`; };
+
+/* ---------- 엑셀 읽기 ---------- */
+function parseWorkbook(buf, fileName){
+  const wb = XLSX.read(buf, { type: "array" });
+  const sheetName = wb.SheetNames.find(n => n.includes("수강")) || wb.SheetNames[0];
+  const ws = wb.Sheets[sheetName];
+  const range = XLSX.utils.decode_range(ws["!ref"]);
+  const cell = (r, c) => { const x = ws[XLSX.utils.encode_cell({ r, c })]; return x ? x.v : null; };
+  // 머리글 찾기: E열(인덱스 4)에 '학기','선택그룹','과목','고유번호'
+  let hr = -1;
+  for(let r = 0; r <= Math.min(range.e.r, 15); r++){
+    if(String(cell(r, 4) ?? "").trim() === "학기"){ hr = r; break; }
+  }
+  if(hr < 0) throw new Error("'학기 / 선택그룹 / 과목 / 고유번호' 머리글을 찾지 못했습니다. NEIS 수강신청 일괄등록 양식인지 확인해 주세요.");
+  const rSem = hr, rGrp = hr + 1, rSub = hr + 2, rCode = hr + 3;
+  const cols = []; let curSem = null, curGrp = null;
+  for(let c = 5; c <= range.e.c; c++){
+    const s = cell(rSem, c), g = cell(rGrp, c), n = cell(rSub, c), code = cell(rCode, c);
+    if(s) { curSem = String(s).trim(); curGrp = null; }
+    if(g) curGrp = String(g).trim();
+    if(!n && !code) continue;
+    cols.push({ c, sem: curSem, group: curGrp || "-", name: String(n ?? "").trim(), code: String(code ?? "").trim() || ("C" + c) });
+  }
+  const students = [];
+  for(let r = rCode + 1; r <= range.e.r; r++){
+    const id = cell(r, 4); const name = cell(r, 3);
+    if(!id && !name) continue;
+    const orig = {};
+    for(const col of cols){ orig[col.code] = Number(cell(r, col.c)) === 1 ? 1 : 0; }
+    const no = [0,1,2].map(i => Number(cell(r, i)) || 0);
+    students.push({ r, no, name: String(name ?? "").trim(), uid: String(id ?? "").trim() || ("R" + r), orig });
+  }
+  // 입학년도 추정
+  let entry = null;
+  const m = String(fileName || "").match(/(20\d\d)\s*(학년도)?\s*입학/);
+  if(m) entry = Number(m[1]);
+  if(!entry){
+    const has3 = students.some(s => s.no[2]), has2 = students.some(s => s.no[1]);
+    entry = has3 ? TARGET_YEAR - 3 : has2 ? TARGET_YEAR - 2 : TARGET_YEAR - 1;
+  }
+  return { wb, sheetName, cols, students, entry, header: hr };
+}
+
+function buildSlot(key, raw){
+  const p = parseWorkbook(bufFromB64(raw.b64), raw.fileName);
+  const d = {
+    key, fileName: raw.fileName, b64: raw.b64, loadedAt: raw.loadedAt || nowStamp(),
+    wb: p.wb, sheetName: p.sheetName, cols: p.cols, students: p.students, entry: p.entry,
+    settings: Object.assign({}, DEFAULT_SETTINGS, raw.settings || {}),
+    requests: raw.requests || [],
+  };
+  d.settings.pick = Object.assign({}, raw.settings?.pick || {});
+  d.settings.maxBy = Object.assign({}, raw.settings?.maxBy || {});
+  d.colBy = {}; d.cols.forEach(c => d.colBy[c.code] = c);
+  d.stuBy = {}; d.students.forEach(s => d.stuBy[s.uid] = s);
+  d.sems = [...new Set(d.cols.map(c => c.sem))];
+  d.groups = {}; // sem → [{group, cols}]
+  for(const c of d.cols){
+    const arr = d.groups[c.sem] || (d.groups[c.sem] = []);
+    let g = arr.find(x => x.group === c.group); if(!g){ g = { group: c.group, cols: [] }; arr.push(g); }
+    g.cols.push(c);
+  }
+  // 선택 과목 수 자동 추정(가장 많은 학생이 고른 개수)
+  for(const sem of d.sems){
+    for(const g of d.groups[sem]){
+      const k = sem + "|" + g.group;
+      if(d.settings.pick[k] != null) continue;
+      const cnt = {};
+      for(const s of d.students){ const n = g.cols.reduce((a, c) => a + s.orig[c.code], 0); cnt[n] = (cnt[n] || 0) + 1; }
+      const best = Object.entries(cnt).sort((a, b) => b[1] - a[1])[0];
+      d.settings.pick[k] = best && Number(best[0]) > 0 ? Number(best[0]) : (g.cols.length === 1 ? 1 : 1);
+      if(best && Number(best[0]) === 0) d.settings.pickGuess = true;
+    }
+  }
+  d.cache = null;
+  return d;
+}
+
+/* ---------- 선택 상태 계산 ---------- */
+// mode: orig(최초 신청) | final(승인 반영) | proj(검토 대기 포함 예상)
+function reqOrder(d){
+  return d.requests.slice().sort((a, b) => {
+    const ka = a.status === "ok" ? "0" + (a.decidedAt || "") : a.status === "pend" ? "1" + a.createdAt : "2";
+    const kb = b.status === "ok" ? "0" + (b.decidedAt || "") : b.status === "pend" ? "1" + b.createdAt : "2";
+    return ka < kb ? -1 : ka > kb ? 1 : 0;
+  });
+}
+function selOf(d, stu, mode, exceptId){
+  const set = new Set(Object.keys(stu.orig).filter(k => stu.orig[k]));
+  if(mode === "orig") return set;
+  for(const q of reqOrder(d)){
+    if(q.uid !== stu.uid || q.id === exceptId) continue;
+    if(q.status === "ok" || (mode === "proj" && q.status === "pend")){
+      for(const c of d.cols) if(c.sem === q.sem) set.delete(c.code);
+      for(const code of q.to) set.add(code);
+    }
+  }
+  return set;
+}
+function counts(d){
+  if(d.cache) return d.cache;
+  const z = () => Object.fromEntries(d.cols.map(c => [c.code, 0]));
+  const res = { orig: z(), final: z(), proj: z(), bad: new Set(), changed: new Set() };
+  for(const s of d.students){
+    const o = selOf(d, s, "orig"), f = selOf(d, s, "final"), p = selOf(d, s, "proj");
+    o.forEach(k => res.orig[k]++); f.forEach(k => res.final[k]++); p.forEach(k => res.proj[k]++);
+    if(validate(d, f).length) res.bad.add(s.uid);
+  }
+  d.cache = res; return res;
+}
+function invalidate(d){ d.cache = null; }
+
+function targetSems(d){ const g = SLOTS[d.key].grade; return d.sems.filter(s => s.startsWith(g + "-")); }
+function validate(d, set, onlySem){
+  const issues = [];
+  for(const sem of targetSems(d)){
+    if(onlySem && sem !== onlySem) continue;
+    for(const g of d.groups[sem]){
+      const need = d.settings.pick[sem + "|" + g.group] ?? 1;
+      const n = g.cols.filter(c => set.has(c.code)).length;
+      if(n !== need) issues.push({ t: "cnt", sem, group: g.group, msg: `${semLabel(sem)} ${g.group}군: ${n}과목 선택 (${need}과목이어야 함)` });
+    }
+  }
+  // 같은 이름 과목 중복 이수 (예: 1·2학기 C군 같은 제2외국어, 운동과 건강)
+  const byName = {};
+  for(const code of set){ const c = d.colBy[code]; if(!c) continue; (byName[c.name] = byName[c.name] || []).push(c); }
+  for(const [name, arr] of Object.entries(byName)){
+    if(arr.length > 1){
+      if(onlySem && !arr.some(c => c.sem === onlySem)) continue;
+      issues.push({ t: "dup", msg: `같은 과목 중복 신청: ${name} (${arr.map(c => c.sem + " " + c.group + "군").join(", ")})` });
+    }
+  }
+  return issues;
+}
+function curNo(stu){ return stu.no[2] || stu.no[1] || stu.no[0] || 0; }
+function clsOf(stu){ return Math.floor(curNo(stu) / 100) % 100; }
+function noTxt(stu){ const n = curNo(stu); return n ? String(n) : "-"; }
+
+/* ---------- 상태 접근 ---------- */
+const D = () => S.slot[S.ui.grade] || null;
+const curSem = () => { const d = D(); return d ? `${SLOTS[d.key].grade}-${S.ui.sem}` : null; };
+function semList(){ const s = curSem(); return S.ui.sem === 0 ? targetSems(D()) : [s]; }
+
+/* ============================================================
+   화면 그리기
+   ============================================================ */
+const VIEWS = [
+  { id: "dash", label: "📊 과목별 현황" },
+  { id: "stu", label: "🧑‍🎓 학생별 변경" },
+  { id: "req", label: "📝 변경 신청 목록" },
+  { id: "roster", label: "📋 명단·반별" },
+  { id: "check", label: "⚠️ 규칙 점검" },
+  { id: "set", label: "⚙️ 파일·설정·내보내기" },
+];
+
+function renderTop(){
+  const g = $("#seg-grade");
+  g.innerHTML = Object.entries(SLOTS).map(([k, v]) => {
+    const d = S.slot[k];
+    return `<button data-act="grade" data-v="${k}" aria-pressed="${S.ui.grade === k}">${v.grade}학년 <span class="small" style="opacity:.75">(${v.entry} 입학${d ? " · " + d.students.length + "명" : ""})</span></button>`;
+  }).join("");
+  const s = $("#seg-sem");
+  s.innerHTML = [[1, "1학기"], [2, "2학기"], [0, "1·2학기"]].map(([v, l]) => `<button data-act="sem" data-v="${v}" aria-pressed="${S.ui.sem === v}" ${D() ? "" : "disabled"}>${l}</button>`).join("");
+  const d = D(); let pend = 0;
+  if(d) pend = d.requests.filter(q => q.status === "pend" && semList().includes(q.sem)).length;
+  $("#tabs").innerHTML = VIEWS.map(v => `<button data-act="view" data-v="${v.id}" ${S.ui.view === v.id ? 'aria-current="page"' : ""}>${v.label}${v.id === "req" && pend ? ` <span class="badge pend">${pend}</span>` : ""}</button>`).join("");
+}
+
+function render(){
+  renderTop();
+  const el = $("#view");
+  const d = D();
+  if(!d && S.ui.view !== "set"){ el.innerHTML = viewStart(); bindDrops(); return; }
+  const fn = { dash: viewDash, stu: viewStu, req: viewReq, roster: viewRoster, check: viewCheck, set: viewSet }[S.ui.view];
+  el.innerHTML = fn();
+  if(S.ui.view === "set" || !d) bindDrops();
+  if(S.ui.view === "stu"){ const sel = $(".stu[aria-selected=true]"); if(sel) sel.scrollIntoView({ block: "nearest" }); }
+}
+function ctxLine(title){
+  const d = D(); const g = SLOTS[S.ui.grade];
+  const sems = d ? semList().map(semLabel).join(" · ") : "";
+  return `<div class="ctx-line"><h1>${title}</h1><span>${TARGET_YEAR}학년도 ${g.grade}학년 (${g.entry}학년도 입학생) ${sems ? "· " + sems : ""}</span></div>`;
+}
+
+/* ---------- 시작(파일 올리기) ---------- */
+function dropCard(k){
+  const v = SLOTS[k], d = S.slot[k];
+  return `<label class="drop ${d ? "loaded" : ""}" data-drop="${k}">
+    <input type="file" accept=".xlsx,.xls" data-file="${k}" hidden>
+    <h3>${TARGET_YEAR}학년도 ${v.grade}학년</h3>
+    <div class="muted">${v.entry}학년도 입학생 수강신청 일괄등록 파일</div>
+    ${d ? `<div class="big">${d.students.length}명</div><div class="small">${esc(d.fileName)}</div><div class="small muted">불러온 시각 ${new Date(d.loadedAt).toLocaleString("ko-KR")} · 변경 신청 ${d.requests.length}건</div><div class="small" style="margin-top:8px">다른 파일로 바꾸려면 여기를 누르거나 끌어다 놓으세요</div>`
+        : `<div class="big">＋</div><div>엑셀 파일을 끌어다 놓거나 <u>눌러서 선택</u></div>`}
+  </label>`;
+}
+function viewStart(){
+  return `${ctxLine("시작하기")}
+  <div class="start">${dropCard("g2")}${dropCard("g3")}</div>
+  <div class="card" style="margin-top:14px"><div class="card-h"><h2>사용 순서</h2></div><div class="card-b">
+    <ol class="steps">
+      <li><div><b>파일 올리기</b> · NEIS(고교학점제 수강신청 프로그램)에서 내려받은 <b>수강신청 일괄등록 엑셀</b>을 학년 칸에 올립니다. 파일 이름에 '2025입학생'처럼 입학년도가 있으면 자동으로 알맞은 학년에 들어갑니다.</div></li>
+      <li><div><b>학년·학기 고르기</b> · 화면 위 <kbd>학년</kbd> <kbd>학기</kbd> 버튼으로 2학년/3학년, 1학기/2학기를 고릅니다. 모든 화면이 고른 학년·학기 기준으로 바뀝니다.</div></li>
+      <li><div><b>학생별 변경 입력</b> · [학생별 변경]에서 학생을 찾아 과목을 바꾸고 사유를 적어 저장합니다. 선택군 과목 수, 같은 과목 중복, 과목 인원(폐강 기준)을 바로 검사합니다.</div></li>
+      <li><div><b>검토·승인</b> · [변경 신청 목록]에서 신청을 승인하거나 반려합니다. 승인한 것만 최종 결과에 반영됩니다.</div></li>
+      <li><div><b>내려받기</b> · [파일·설정·내보내기]에서 승인 내용을 반영한 <b>일괄등록 엑셀</b>(NEIS에 다시 올리는 양식 그대로)과 변경 내역을 내려받습니다.</div></li>
+    </ol>
+    <p class="notice info" style="margin:14px 0 0">🔒 학생 자료는 <b>이 컴퓨터의 브라우저 안에만</b> 저장되고 어디로도 전송되지 않습니다. 다른 컴퓨터에서 이어서 작업하려면 [파일·설정·내보내기]의 <b>작업 백업 저장</b>을 이용하세요.</p>
+  </div></div>`;
+}
+function bindDrops(){
+  document.querySelectorAll("[data-drop]").forEach(el => {
+    el.addEventListener("dragover", e => { e.preventDefault(); el.classList.add("on"); });
+    el.addEventListener("dragleave", () => el.classList.remove("on"));
+    el.addEventListener("drop", e => { e.preventDefault(); el.classList.remove("on"); const f = e.dataTransfer.files[0]; if(f) loadFile(f, el.dataset.drop); });
+  });
+  document.querySelectorAll("[data-file]").forEach(inp => inp.addEventListener("change", () => { const f = inp.files[0]; if(f) loadFile(f, inp.dataset.file).finally(() => { inp.value = ""; }); }));
+}
+async function loadFile(file, hint){
+  try{
+    const buf = await file.arrayBuffer();
+    const p = parseWorkbook(buf, file.name);
+    let key = Object.keys(SLOTS).find(k => SLOTS[k].entry === p.entry) || hint;
+    if(hint && key !== hint){
+      if(!confirm(`이 파일은 ${p.entry}학년도 입학생(${SLOTS[key]?.grade ?? "?"}학년) 자료로 보입니다.\n[확인] ${SLOTS[key]?.grade}학년 칸에 넣기\n[취소] 고른 칸(${SLOTS[hint].grade}학년)에 그대로 넣기`)) key = hint;
+    }
+    if(!key) throw new Error("입학년도를 알 수 없습니다.");
+    const old = S.slot[key];
+    if(old && old.requests.length){
+      if(!confirm(`${SLOTS[key].grade}학년에 이미 변경 신청 ${old.requests.length}건이 있습니다.\n새 파일을 '최초 신청' 기준으로 바꾸고 기존 변경 신청은 그대로 유지할까요?\n(학생 고유번호로 연결됩니다. 새 파일에 없는 학생의 신청은 표시되지 않습니다.)`)) return;
+    }
+    const raw = { fileName: file.name, b64: b64FromBuf(buf), loadedAt: nowStamp(), settings: old ? { min: old.settings.min, max: old.settings.max, maxBy: old.settings.maxBy } : null, requests: old ? old.requests : [] };
+    S.slot[key] = buildSlot(key, raw);
+    saveSlot(key);
+    S.ui.grade = key; S.ui.stu = null; S.draft = null;
+    toast(`${SLOTS[key].grade}학년 파일을 불러왔습니다 · 학생 ${S.slot[key].students.length}명, 과목 ${S.slot[key].cols.length}개`);
+    if(S.ui.view === "set") render(); else { S.ui.view = "dash"; render(); }
+  }catch(err){ console.error(err); alert("파일을 읽지 못했습니다.\n" + err.message); }
+}
+
+/* ---------- 과목별 현황 ---------- */
+function maxOf(d, code){ return Number(d.settings.maxBy[code]) || Number(d.settings.max) || 0; }
+function subjRows(d, sem, g, cnt, scale){
+  const min = Number(d.settings.min) || 0;
+  return g.cols.map(c => {
+    const o = cnt.orig[c.code], f = cnt.final[c.code], p = cnt.proj[c.code], mx = maxOf(d, c.code);
+    const df = f - o, dp = p - f;
+    const low = f > 0 && min && f < min, zero = f === 0, over = mx && f > mx;
+    const w = v => Math.max(0, Math.min(100, v / scale * 100));
+    return `<button class="subj-row ${low || zero ? "low" : ""} ${over ? "over" : ""}" data-act="subj" data-v="${esc(c.code)}" title="${esc(c.name)} 명단 보기">
+      <span class="nm">${esc(c.name)}${zero ? ' <span class="badge warn">0명</span>' : low ? ' <span class="badge warn">기준 미달</span>' : ""}${over ? ' <span class="badge no">정원 초과</span>' : ""}</span>
+      <span class="bar">${dp > 0 ? `<i class="pend" style="width:${w(p)}%"></i>` : ""}<i style="width:${w(dp < 0 ? p : f)}%"></i>${dp < 0 ? `<i class="pend" style="left:${w(p)}%;width:${w(f) - w(p)}%"></i>` : ""}${min ? `<span class="min" style="left:${w(min)}%"></span>` : ""}</span>
+      <span class="cnt"><b>${f}</b>명 ${df ? `<span class="${df > 0 ? "d-up" : "d-dn"}">${df > 0 ? "▲" : "▼"}${Math.abs(df)}</span>` : ""}${dp ? `<br><span class="d-pd">대기 ${dp > 0 ? "+" : ""}${dp}</span>` : ""}</span>
+    </button>`;
+  }).join("");
+}
+function viewDash(){
+  const d = D(); const cnt = counts(d); const sems = semList();
+  const reqs = d.requests.filter(q => sems.includes(q.sem));
+  const pend = reqs.filter(q => q.status === "pend").length, ok = reqs.filter(q => q.status === "ok").length, no = reqs.filter(q => q.status === "no").length;
+  const changedStu = new Set(reqs.filter(q => q.status === "ok").map(q => q.uid)).size;
+  const min = Number(d.settings.min) || 0;
+  let lowN = 0;
+  for(const sem of sems) for(const g of d.groups[sem]) for(const c of g.cols){ const f = cnt.final[c.code]; if(f === 0 || (min && f < min)) lowN++; }
+  const badN = [...cnt.bad].length;
+  let html = ctxLine("과목별 현황");
+  if(d.settings.pickGuess) html += `<p class="notice warn">아직 아무도 신청하지 않은 학기가 있어 선택 과목 수를 추정할 수 없습니다. [파일·설정·내보내기] → <b>선택군 규칙</b>에서 과목 수를 확인해 주세요.</p>`;
+  html += `<div class="kpis">
+    <div class="card kpi"><div class="v">${d.students.length}</div><div class="l">학생 수</div></div>
+    <div class="card kpi ${pend ? "attn" : ""}"><div class="v">${pend}</div><div class="l">검토 대기 신청</div></div>
+    <div class="card kpi"><div class="v">${ok}</div><div class="l">승인 (${changedStu}명) · 반려 ${no}</div></div>
+    <div class="card kpi ${badN ? "attn" : ""}"><div class="v">${badN}</div><div class="l">규칙 위반 학생 (승인 반영 기준)</div></div>
+    <div class="card kpi ${lowN ? "attn" : ""}"><div class="v">${lowN}</div><div class="l">${min ? min + "명 미만·" : ""}0명 과목</div></div>
+  </div>
+  <div class="legend"><span><i style="background:var(--bar2)"></i>승인 반영 인원</span><span><i style="background:repeating-linear-gradient(45deg,var(--pend) 0 4px,transparent 4px 7px)"></i>검토 대기 변동</span>${min ? `<span><i style="background:var(--warn);width:3px"></i>최소 개설 기준 ${min}명</span>` : ""}<span>▲▼ 최초 신청 대비 증감 · 과목을 누르면 명단</span></div>`;
+  for(const sem of sems){
+    const scale = Math.max(10, ...d.groups[sem].flatMap(g => g.cols.map(c => Math.max(cnt.final[c.code], cnt.proj[c.code], min))));
+    html += `<h2 style="font-size:1.05rem;margin:18px 0 10px">${semLabel(sem)}</h2><div class="groups">`;
+    for(const g of d.groups[sem]){
+      const need = d.settings.pick[sem + "|" + g.group];
+      const tot = g.cols.reduce((a, c) => a + cnt.final[c.code], 0);
+      html += `<div class="card"><div class="card-h"><h3>${esc(g.group)}군</h3><span class="badge">${need}과목 선택</span><span class="grp-meta">${g.cols.length}과목 개설 · 신청 ${tot}건</span></div><div class="card-b">${subjRows(d, sem, g, cnt, scale)}</div></div>`;
+    }
+    html += `</div>`;
+  }
+  return html;
+}
+
+/* ---------- 학생별 변경 ---------- */
+function stuMarks(d, s, cnt){
+  const qs = d.requests.filter(q => q.uid === s.uid && semList().includes(q.sem));
+  return `${qs.some(q => q.status === "pend") ? '<span class="dot pend" title="검토 대기"></span>' : ""}${qs.some(q => q.status === "ok") ? '<span class="dot ok" title="승인된 변경"></span>' : ""}${cnt.bad.has(s.uid) ? '<span class="dot bad" title="규칙 위반"></span>' : ""}`;
+}
+function filteredStudents(d){
+  const cnt = counts(d); const q = S.ui.q.trim(); const sems = semList();
+  return d.students.filter(s => {
+    if(S.ui.cls && String(clsOf(s)) !== S.ui.cls) return false;
+    if(q && !(s.name.includes(q) || noTxt(s).includes(q) || s.uid.includes(q))) return false;
+    if(S.ui.flt === "req" && !d.requests.some(r => r.uid === s.uid && sems.includes(r.sem))) return false;
+    if(S.ui.flt === "pend" && !d.requests.some(r => r.uid === s.uid && r.status === "pend" && sems.includes(r.sem))) return false;
+    if(S.ui.flt === "bad" && !cnt.bad.has(s.uid)) return false;
+    return true;
+  }).sort((a, b) => curNo(a) - curNo(b));
+}
+function viewStu(){
+  const d = D(); const cnt = counts(d);
+  const classes = [...new Set(d.students.map(clsOf))].sort((a, b) => a - b);
+  const list = filteredStudents(d);
+  const stu = S.ui.stu && d.stuBy[S.ui.stu];
+  return `${ctxLine("학생별 변경")}
+  <div class="split">
+    <div class="card">
+      <div class="stu-filter">
+        <input type="search" id="q" placeholder="이름·학번 검색 (예: 20315, 김)" value="${esc(S.ui.q)}" aria-label="학생 검색">
+        <div class="row">
+          <select id="cls" aria-label="반"><option value="">전체 반</option>${classes.map(c => `<option value="${c}" ${String(c) === S.ui.cls ? "selected" : ""}>${c}반</option>`).join("")}</select>
+          <select id="flt" aria-label="보기"><option value="all">모든 학생</option><option value="req" ${S.ui.flt === "req" ? "selected" : ""}>변경 신청 있음</option><option value="pend" ${S.ui.flt === "pend" ? "selected" : ""}>검토 대기</option><option value="bad" ${S.ui.flt === "bad" ? "selected" : ""}>규칙 위반</option></select>
+        </div>
+        <div class="small muted">${list.length}명 · 학번은 현재(${TARGET_YEAR - 1}학년도) 학번 · <span class="dot pend"></span> 대기 <span class="dot ok"></span> 승인 <span class="dot bad"></span> 위반</div>
+      </div>
+      <div class="stu-list" role="listbox" aria-label="학생 목록">
+        ${list.map(s => `<button class="stu" role="option" data-act="pick" data-v="${esc(s.uid)}" aria-selected="${S.ui.stu === s.uid}"><span class="no">${noTxt(s)}</span><span class="nm">${esc(s.name)}</span><span class="marks">${stuMarks(d, s, cnt)}</span></button>`).join("") || `<div class="empty">조건에 맞는 학생이 없습니다</div>`}
+      </div>
+    </div>
+    <div>${stu ? stuPanel(d, stu) : `<div class="card empty">왼쪽 목록에서 학생을 고르세요.<br><span class="small">키보드 <kbd>↑</kbd> <kbd>↓</kbd> 로도 이동할 수 있습니다.</span></div>`}</div>
+  </div>`;
+}
+function ensureDraft(d, stu){
+  const sems = semList();
+  if(S.draft && S.draft.uid === stu.uid && S.draft.grade === d.key && S.draft.semKey === sems.join(",")) return S.draft;
+  const cur = selOf(d, stu, "proj");
+  S.draft = { uid: stu.uid, grade: d.key, semKey: sems.join(","), sel: new Set(cur), base: new Set(cur), reason: REASONS[0], reasonTxt: "", date: today(), memo: "" };
+  return S.draft;
+}
+function semBlock(d, stu, sem, opt){
+  const { editable, sel, base, orig, cnt } = opt;
+  const min = Number(d.settings.min) || 0;
+  let h = `<div class="sem-blk ${editable ? "cur" : "ro"}"><div class="h"><b>${semLabel(sem)}</b>${editable ? '<span class="badge">변경 가능</span>' : '<span class="badge">참고</span>'}`;
+  if(editable){
+    const ch = [...sel].filter(k => d.colBy[k].sem === sem && !base.has(k)).length + [...base].filter(k => d.colBy[k].sem === sem && !sel.has(k)).length;
+    if(ch) h += `<span class="badge pend">바꾼 과목 ${ch}</span>`;
+  }
+  h += `</div>`;
+  for(const g of d.groups[sem]){
+    const need = d.settings.pick[sem + "|" + g.group] ?? 1;
+    const n = g.cols.filter(c => sel.has(c.code)).length;
+    h += `<div class="grp"><div class="grp-h"><b>${esc(g.group)}군</b><span class="need ${n !== need ? "bad" : ""}">${n} / ${need}과목</span>${editable && need === 1 ? '<span class="muted small">· 하나를 누르면 바로 바뀝니다</span>' : ""}</div><div class="chips">`;
+    for(const c of g.cols){
+      const on = sel.has(c.code), was = orig.has(c.code), b = base.has(c.code);
+      let cls = on ? "on" : "";
+      if(editable){ if(on && !b) cls = "add"; else if(!on && b) cls = "del"; }
+      if(was && !on && !(editable && b)) cls += " was";
+      const f = cnt.proj[c.code];
+      const nAfter = f + (editable ? ((on ? 1 : 0) - (b ? 1 : 0)) : 0);
+      if(min && nAfter < min) cls += " low";
+      h += editable
+        ? `<button class="chip ${cls}" data-act="tog" data-v="${esc(c.code)}" aria-pressed="${on}" title="${was ? "최초 신청 과목 · " : ""}예상 인원 ${nAfter}명">${esc(c.name)}<span class="n">${nAfter}</span></button>`
+        : `<span class="chip ${cls}" title="${was ? "최초 신청 과목" : ""}">${esc(c.name)}</span>`;
+    }
+    h += `</div></div>`;
+  }
+  return h + `</div>`;
+}
+function stuPanel(d, stu){
+  const draft = ensureDraft(d, stu); const cnt = counts(d);
+  const orig = selOf(d, stu, "orig"); const fin = selOf(d, stu, "final");
+  const sems = semList(); const all = targetSems(d);
+  const ctx = d.sems.filter(s => !all.includes(s) && d.cols.some(c => c.sem === s && orig.has(c.code)));
+  let h = `<div class="card"><div class="card-h stu-head"><span class="nm">${esc(stu.name)}</span><span class="badge">학번 ${noTxt(stu)}</span><span class="muted small">고유번호 ${esc(stu.uid)}</span>
+    <span style="margin-left:auto" class="btns"><button class="btn sm" data-act="print-stu">🖨 변경 확인서</button></span></div><div class="card-b">`;
+  for(const sem of all){
+    const editable = sems.includes(sem);
+    h += semBlock(d, stu, sem, { editable, sel: editable ? draft.sel : selOf(d, stu, "proj"), base: draft.base, orig, cnt });
+  }
+  if(ctx.length){
+    h += `<details class="sem-blk ro"><summary class="h" style="cursor:pointer"><b>이미 이수한 학기 (${ctx.map(semLabel).join(", ")})</b><span class="muted small">중복 이수 점검에 사용</span></summary><div class="ro-sum">`;
+    for(const sem of ctx) h += `<div><b>${semLabel(sem)}</b> : ${d.cols.filter(c => c.sem === sem && orig.has(c.code)).map(c => esc(c.name)).join(", ")}</div>`;
+    h += `</div></details>`;
+  }
+  // 변경 내용 & 저장
+  const adds = [...draft.sel].filter(k => !draft.base.has(k)), dels = [...draft.base].filter(k => !draft.sel.has(k));
+  const changed = adds.length + dels.length > 0;
+  const issues = sems.flatMap(sem => validate(d, draft.sel, sem));
+  const min = Number(d.settings.min) || 0;
+  const capWarn = [];
+  for(const k of dels){ const n = cnt.proj[k] - 1; if(min && n < min) capWarn.push(`${d.colBy[k].name}: ${cnt.proj[k]}명 → ${n}명 (최소 ${min}명 미만)`); }
+  for(const k of adds){ const n = cnt.proj[k] + 1, mx = maxOf(d, k); if(mx && n > mx) capWarn.push(`${d.colBy[k].name}: ${cnt.proj[k]}명 → ${n}명 (정원 ${mx}명 초과)`); if(cnt.proj[k] === 0) capWarn.push(`${d.colBy[k].name}: 현재 신청 0명 과목입니다 (개설 여부 확인)`); }
+  h += `</div><div class="diff-box">`;
+  if(!changed){
+    h += `<div class="muted">위 과목 단추를 눌러 바꿀 과목을 고르면, 여기에 변경 내용과 점검 결과가 나옵니다.</div>`;
+  }else{
+    h += `<div><b>변경 내용</b> ${dels.map(k => `<span class="chip-in del">${esc(d.colBy[k].sem)} ${esc(d.colBy[k].name)}</span>`).join("")} → ${adds.map(k => `<span class="chip-in add">${esc(d.colBy[k].sem)} ${esc(d.colBy[k].name)}</span>`).join("")}</div>`;
+    if(issues.length) h += `<div class="notice err"><b>저장할 수 없습니다</b><ul>${issues.map(i => `<li>${esc(i.msg)}</li>`).join("")}</ul></div>`;
+    else h += `<div class="notice ok">선택군 과목 수와 중복 이수 점검을 통과했습니다.</div>`;
+    if(capWarn.length) h += `<div class="notice warn"><b>인원 확인</b><ul>${capWarn.map(x => `<li>${esc(x)}</li>`).join("")}</ul></div>`;
+    h += `<div class="form-grid">
+      <label for="f-reason">변경 사유</label><div class="btns"><select id="f-reason">${REASONS.map(r => `<option ${r === draft.reason ? "selected" : ""}>${r}</option>`).join("")}</select><input type="text" id="f-reasontxt" placeholder="구체적 사유 (예: 간호학과 희망 → 생명과학 필요)" value="${esc(draft.reasonTxt)}" style="flex:1;min-width:200px"></div>
+      <label for="f-date">신청일</label><div><input type="date" id="f-date" value="${esc(draft.date)}"></div>
+      <label for="f-memo">검토 메모</label><input type="text" id="f-memo" placeholder="상담 내용, 담임 의견 등 (선택)" value="${esc(draft.memo)}">
+    </div>
+    <div class="btns"><button class="btn" data-act="save" data-v="pend" ${issues.length ? "disabled" : ""}>검토 대기로 저장</button><button class="btn ok" data-act="save" data-v="ok" ${issues.length ? "disabled" : ""}>바로 승인</button><button class="btn" data-act="reset-draft">되돌리기</button></div>`;
+  }
+  h += `</div></div>`;
+  // 이력
+  const hist = d.requests.filter(q => q.uid === stu.uid).sort((a, b) => b.createdAt < a.createdAt ? -1 : 1);
+  if(hist.length){
+    h += `<div class="card" style="margin-top:14px"><div class="card-h"><h3>변경 신청 이력</h3><span class="muted small">${hist.length}건</span></div><div class="card-b req-hist">`;
+    for(const q of hist) h += `<div class="req-item">${statusBadge(q)} <b>${semLabel(q.sem)}</b> · ${esc(q.date)} · ${diffChips(d, q)}<div class="small muted">${esc(q.reason)}${q.reasonTxt ? " – " + esc(q.reasonTxt) : ""}${q.memo ? " · 메모: " + esc(q.memo) : ""}${q.decision ? " · 처리 의견: " + esc(q.decision) : ""}</div><div class="btns" style="margin-top:6px">${reqButtons(q)}</div></div>`;
+    h += `</div></div>`;
+  }
+  return h;
+}
+function statusBadge(q){ return q.status === "ok" ? '<span class="badge ok">승인</span>' : q.status === "no" ? '<span class="badge no">반려</span>' : '<span class="badge pend">검토 대기</span>'; }
+function diffChips(d, q){
+  const from = new Set(q.from), to = new Set(q.to);
+  const del = q.from.filter(k => !to.has(k)), add = q.to.filter(k => !from.has(k));
+  const nm = k => esc(d.colBy[k]?.name ?? k);
+  return del.map(k => `<span class="chip-in del">${nm(k)}</span>`).join("") + " → " + add.map(k => `<span class="chip-in add">${nm(k)}</span>`).join("");
+}
+function reqButtons(q){
+  const b = [];
+  if(q.status !== "ok") b.push(`<button class="btn sm ok" data-act="rq-ok" data-v="${q.id}">승인</button>`);
+  if(q.status !== "no") b.push(`<button class="btn sm no" data-act="rq-no" data-v="${q.id}">반려</button>`);
+  if(q.status !== "pend") b.push(`<button class="btn sm" data-act="rq-pend" data-v="${q.id}">대기로</button>`);
+  b.push(`<button class="btn sm" data-act="rq-del" data-v="${q.id}" title="신청 삭제">삭제</button>`);
+  return b.join("");
+}
+function saveDraft(status){
+  const d = D(); const stu = d.stuBy[S.draft.uid]; const draft = S.draft;
+  const sems = semList(); let n = 0;
+  for(const sem of sems){
+    const to = [...draft.sel].filter(k => d.colBy[k].sem === sem).sort();
+    const from = [...draft.base].filter(k => d.colBy[k].sem === sem).sort();
+    if(to.join() === from.join()) continue;
+    // 같은 학생·학기의 검토 대기 신청은 하나로 합침
+    const pend = d.requests.find(q => q.uid === stu.uid && q.sem === sem && q.status === "pend");
+    const fromBase = pend ? [...selOf(d, stu, "proj", pend.id)].filter(k => d.colBy[k].sem === sem).sort() : from;
+    const rec = pend || { id: uid(), uid: stu.uid, sem, createdAt: nowStamp() };
+    Object.assign(rec, { from: fromBase, to, reason: draft.reason, reasonTxt: draft.reasonTxt, date: draft.date, memo: draft.memo, status, decidedAt: status === "ok" ? nowStamp() : null, name: stu.name, no: curNo(stu) });
+    if(fromBase.join() === to.join()){ d.requests = d.requests.filter(q => q !== rec); }
+    else if(!pend) d.requests.push(rec);
+    n++;
+  }
+  invalidate(d); saveSlot(d.key); S.draft = null;
+  toast(n ? `${stu.name} 학생 변경 신청을 ${status === "ok" ? "승인" : "검토 대기로"} 저장했습니다` : "바뀐 내용이 없습니다");
+  render();
+}
+
+/* ---------- 변경 신청 목록 ---------- */
+function viewReq(){
+  const d = D(); const sems = semList(); const q = S.ui.rq.trim();
+  const all = d.requests.filter(r => sems.includes(r.sem));
+  const list = all.filter(r => (S.ui.rst === "all" || r.status === S.ui.rst) && (!q || (r.name || "").includes(q) || String(r.no).includes(q) || r.to.concat(r.from).some(k => (d.colBy[k]?.name || "").includes(q))))
+    .sort((a, b) => (a.date + a.createdAt) < (b.date + b.createdAt) ? -1 : 1);
+  const c = st => all.filter(r => st === "all" || r.status === st).length;
+  let h = ctxLine("변경 신청 목록");
+  h += `<div class="card"><div class="card-h">
+    <div class="seg">${[["pend", "검토 대기"], ["ok", "승인"], ["no", "반려"], ["all", "전체"]].map(([v, l]) => `<button data-act="rst" data-v="${v}" aria-pressed="${S.ui.rst === v}">${l} ${c(v)}</button>`).join("")}</div>
+    <input type="search" id="rq" placeholder="이름·학번·과목 검색" value="${esc(S.ui.rq)}" style="flex:1;min-width:160px" aria-label="신청 검색">
+    ${S.ui.rst === "pend" && list.length ? `<button class="btn ok sm" data-act="rq-all-ok">보이는 ${list.length}건 모두 승인</button>` : ""}
+  </div>`;
+  if(!list.length) h += `<div class="empty">${all.length ? "조건에 맞는 신청이 없습니다" : "아직 변경 신청이 없습니다. [학생별 변경]에서 입력하세요."}</div>`;
+  else{
+    // 승인 시 영향(검토 대기 기준)
+    const cnt = counts(d); const min = Number(d.settings.min) || 0;
+    h += `<div class="tbl-wrap"><table><thead><tr><th>신청일</th><th>학번</th><th>이름</th><th>학기</th><th>변경 (빼기 → 넣기)</th><th>사유</th><th>상태</th><th>처리</th></tr></thead><tbody>`;
+    for(const r of list){
+      const from = new Set(r.from), to = new Set(r.to);
+      const warn = [];
+      for(const k of r.from.filter(k => !to.has(k))){ const n = (r.status === "ok" ? cnt.final[k] : cnt.final[k] - 1); if(min && n < min) warn.push(`${d.colBy[k]?.name} ${n}명`); }
+      for(const k of r.to.filter(k => !from.has(k))){ const mx = maxOf(d, k); const n = (r.status === "ok" ? cnt.final[k] : cnt.final[k] + 1); if(mx && n > mx) warn.push(`${d.colBy[k]?.name} ${n}/${mx}명`); }
+      const stu = d.stuBy[r.uid];
+      h += `<tr><td class="small">${esc(r.date)}</td><td class="num">${stu ? noTxt(stu) : esc(r.no)}</td><td><button class="btn sm" data-act="goto" data-v="${esc(r.uid)}" title="학생 화면으로">${esc(stu ? stu.name : r.name)}</button></td><td class="small">${semLabel(r.sem)}</td>
+        <td>${diffChips(d, r)}${warn.length ? `<div class="small" style="color:var(--warn)">⚠ ${esc(warn.join(", "))}</div>` : ""}</td>
+        <td class="small">${esc(r.reason)}${r.reasonTxt ? `<br><span class="muted">${esc(r.reasonTxt)}</span>` : ""}${r.memo ? `<br><span class="muted">메모: ${esc(r.memo)}</span>` : ""}</td>
+        <td>${statusBadge(r)}${r.decision ? `<div class="small muted">${esc(r.decision)}</div>` : ""}</td><td><div class="btns">${reqButtons(r)}</div></td></tr>`;
+    }
+    h += `</tbody></table></div>`;
+  }
+  return h + `</div>`;
+}
+function setStatus(id, st){
+  const d = D(); const r = d.requests.find(x => x.id === id); if(!r) return;
+  if(st === "ok"){
+    // 승인 전에 다른 승인과 합쳐도 규칙에 맞는지 확인
+    const stu = d.stuBy[r.uid];
+    if(stu){
+      const set = selOf(d, stu, "final", r.id);
+      for(const c of d.cols) if(c.sem === r.sem) set.delete(c.code);
+      r.to.forEach(k => set.add(k));
+      const iss = validate(d, set);
+      if(iss.length && !confirm(`승인하면 규칙에 맞지 않습니다.\n- ${iss.map(i => i.msg).join("\n- ")}\n\n그래도 승인할까요?`)) return;
+    }
+  }
+  if(st === "no"){ const why = prompt("반려 사유를 적어 주세요 (선택)", r.decision || ""); if(why === null) return; r.decision = why; }
+  if(st === "del"){ if(!confirm("이 변경 신청을 삭제할까요? (되돌릴 수 없습니다)")) return; d.requests = d.requests.filter(x => x !== r); }
+  else { r.status = st; r.decidedAt = st === "pend" ? null : nowStamp(); }
+  invalidate(d); saveSlot(d.key); S.draft = null; render();
+}
+
+/* ---------- 명단·반별 ---------- */
+function viewRoster(){
+  const d = D(); const cnt = counts(d); const sems = semList();
+  const opts = sems.flatMap(sem => d.groups[sem].flatMap(g => g.cols.map(c => ({ c, label: `${sem} ${g.group}군 · ${c.name}` }))));
+  if(!S.ui.subj || !opts.some(o => o.c.code === S.ui.subj)) S.ui.subj = opts[0]?.c.code;
+  const col = d.colBy[S.ui.subj];
+  const rows = d.students.map(s => {
+    const o = selOf(d, s, "orig").has(col.code), f = selOf(d, s, "final").has(col.code), p = selOf(d, s, "proj").has(col.code);
+    return { s, o, f, p };
+  }).filter(x => x.o || x.f || x.p).sort((a, b) => curNo(a.s) - curNo(b.s));
+  const classes = [...new Set(d.students.map(clsOf))].sort((a, b) => a - b);
+  let h = ctxLine("명단·반별");
+  h += `<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(420px,1fr))">
+  <div class="card"><div class="card-h"><h3>과목별 수강생 명단</h3>
+    <select id="subj" aria-label="과목" style="flex:1;min-width:180px">${opts.map(o => `<option value="${esc(o.c.code)}" ${o.c.code === S.ui.subj ? "selected" : ""}>${esc(o.label)} (${cnt.final[o.c.code]}명)</option>`).join("")}</select>
+    <button class="btn sm" data-act="print-roster">🖨 인쇄</button></div>
+    <div class="card-b small">최종(승인 반영) <b>${cnt.final[col.code]}명</b> · 최초 ${cnt.orig[col.code]}명 · 대기 포함 ${cnt.proj[col.code]}명</div>
+    <div class="tbl-wrap"><table><thead><tr><th>학번</th><th>이름</th><th>상태</th></tr></thead><tbody>
+    ${rows.map(x => `<tr><td class="num">${noTxt(x.s)}</td><td><button class="btn sm" data-act="goto" data-v="${esc(x.s.uid)}">${esc(x.s.name)}</button></td><td>${x.f ? (x.o ? '<span class="chip-in keep">유지</span>' : '<span class="chip-in add">추가(승인)</span>') : x.o ? '<span class="chip-in del">빠짐(승인)</span>' : ""}${x.p !== x.f ? ` <span class="badge pend">${x.p ? "추가 대기" : "빠짐 대기"}</span>` : ""}</td></tr>`).join("") || `<tr><td colspan="3" class="muted">신청한 학생이 없습니다</td></tr>`}
+    </tbody></table></div></div>
+  <div class="card"><div class="card-h"><h3>반별 신청 인원 (승인 반영)</h3><span class="muted small">현재 학반 기준</span></div>`;
+  for(const sem of sems){
+    for(const g of d.groups[sem]){
+      h += `<div class="card-b" style="padding-bottom:0"><b>${semLabel(sem)} ${esc(g.group)}군</b></div><div class="tbl-wrap" style="max-height:none"><table><thead><tr><th>과목</th>${classes.map(c => `<th class="num">${c}반</th>`).join("")}<th class="num">계</th></tr></thead><tbody>`;
+      for(const c of g.cols){
+        const per = classes.map(k => d.students.filter(s => clsOf(s) === k && selOf(d, s, "final").has(c.code)).length);
+        h += `<tr><td>${esc(c.name)}</td>${per.map(n => `<td class="num ${n ? "" : "muted"}">${n || "·"}</td>`).join("")}<td class="num"><b>${cnt.final[c.code]}</b></td></tr>`;
+      }
+      h += `</tbody></table></div>`;
+    }
+  }
+  h += `</div></div>`;
+  return h;
+}
+
+/* ---------- 규칙 점검 ---------- */
+function viewCheck(){
+  const d = D(); const sems = semList();
+  const rows = [];
+  for(const s of d.students){
+    const f = selOf(d, s, "final"); const iss = sems.flatMap(sem => validate(d, f, sem));
+    const uniq = [...new Map(iss.map(i => [i.msg, i])).values()];
+    if(uniq.length) rows.push({ s, iss: uniq });
+  }
+  let h = ctxLine("규칙 점검");
+  h += `<p class="muted small" style="margin-top:-6px">승인 반영 기준으로 모든 학생을 점검합니다. 규칙: ① 선택군마다 정해진 과목 수 ② 같은 이름 과목을 두 학기에 중복 신청하지 않기 (규칙은 [파일·설정·내보내기]에서 조정)</p>`;
+  if(!rows.length) return h + `<div class="card"><div class="empty">🎉 규칙에 어긋나는 학생이 없습니다</div></div>`;
+  h += `<div class="card"><div class="card-h"><h3>확인이 필요한 학생 ${rows.length}명</h3></div><div class="tbl-wrap"><table><thead><tr><th>학번</th><th>이름</th><th>내용</th></tr></thead><tbody>`;
+  for(const r of rows) h += `<tr><td class="num">${noTxt(r.s)}</td><td><button class="btn sm" data-act="goto" data-v="${esc(r.s.uid)}">${esc(r.s.name)}</button></td><td>${r.iss.map(i => esc(i.msg)).join("<br>")}</td></tr>`;
+  return h + `</tbody></table></div></div>`;
+}
+
+/* ---------- 설정·내보내기 ---------- */
+function viewSet(){
+  const d = D();
+  let h = ctxLine("파일·설정·내보내기");
+  h += `<div class="start" style="margin-bottom:14px">${dropCard("g2")}${dropCard("g3")}</div>`;
+  if(!d) return h + `<p class="muted">${SLOTS[S.ui.grade].grade}학년 파일을 먼저 올려 주세요.</p>`;
+  const pend = d.requests.filter(q => q.status === "pend").length;
+  h += `<div class="set-grid">
+  <div class="card"><div class="card-h"><h3>📤 내려받기 · ${SLOTS[d.key].grade}학년</h3></div><div class="card-b grid">
+    <div><button class="btn primary" data-act="exp-neis">NEIS 일괄등록 파일 (승인 반영)</button>
+      <div class="small muted" style="margin-top:4px">처음 올린 파일과 <b>같은 양식</b>에 승인된 변경만 1/0으로 바꿔 넣습니다. 고유번호·머리글은 그대로입니다.${pend ? `<br><span style="color:var(--warn)">검토 대기 ${pend}건은 포함되지 않습니다.</span>` : ""}</div></div>
+    <div><button class="btn" data-act="exp-log">변경 내역 엑셀</button> <button class="btn" data-act="exp-sum">과목별 인원표 엑셀</button></div>
+    <div><button class="btn" data-act="print-all">🖨 승인된 학생 변경 확인서 모두 인쇄</button></div>
+  </div></div>
+  <div class="card"><div class="card-h"><h3>💾 작업 백업</h3></div><div class="card-b grid">
+    <div class="small">변경 신청·설정·원본 파일을 하나의 백업 파일(.json)로 저장합니다. 다른 컴퓨터에서 [백업 불러오기]로 그대로 이어서 작업할 수 있습니다. <b>작업을 마칠 때마다 저장</b>하는 것을 권장합니다.</div>
+    <div class="btns"><button class="btn primary" data-act="backup">작업 백업 저장</button><label class="btn">백업 불러오기<input type="file" accept=".json" id="restore" hidden></label></div>
+    <div class="btns"><button class="btn no sm" data-act="clear-req">${SLOTS[d.key].grade}학년 변경 신청 모두 지우기</button><button class="btn no sm" data-act="clear-slot">${SLOTS[d.key].grade}학년 파일 빼기</button></div>
+  </div></div>
+  <div class="card"><div class="card-h"><h3>👥 인원 기준</h3></div><div class="card-b form-grid">
+    <label for="s-min">최소 개설 인원</label><div><input type="number" id="s-min" min="0" value="${esc(d.settings.min)}" style="width:90px"> 명 <span class="small muted">미만이면 '기준 미달' 표시 (0 = 사용 안 함)</span></div>
+    <label for="s-max">과목 최대 인원</label><div><input type="number" id="s-max" min="0" value="${esc(d.settings.max)}" style="width:90px"> 명 <span class="small muted">초과하면 경고 (0 = 제한 없음)</span></div>
+  </div></div>
+  </div>
+  <div class="card" style="margin-top:14px"><div class="card-h"><h3>📐 선택군 규칙 · ${SLOTS[d.key].grade}학년</h3><span class="muted small">파일의 신청 내용으로 자동 추정 · 필요하면 고치세요 · 과목별 최대 인원(비우면 위 기준 사용)</span></div><div class="card-b">`;
+  for(const sem of targetSems(d)){
+    h += `<div style="margin-bottom:12px"><b>${semLabel(sem)}</b><div class="tbl-wrap" style="max-height:none"><table class="rule-tbl"><thead><tr><th>선택군</th><th>선택 과목 수</th><th>과목 (과목별 최대 인원)</th></tr></thead><tbody>`;
+    for(const g of d.groups[sem]){
+      h += `<tr><td><b>${esc(g.group)}군</b></td><td><input type="number" min="0" max="${g.cols.length}" data-pick="${esc(sem + "|" + g.group)}" value="${esc(d.settings.pick[sem + "|" + g.group])}"> / ${g.cols.length}</td><td>${g.cols.map(c => `<span style="display:inline-flex;gap:4px;align-items:center;margin:2px 10px 2px 0" class="small">${esc(c.name)} <input type="number" min="0" placeholder="-" data-maxby="${esc(c.code)}" value="${esc(d.settings.maxBy[c.code] ?? "")}" style="width:58px;padding:2px 6px"></span>`).join("")}</td></tr>`;
+    }
+    h += `</tbody></table></div></div>`;
+  }
+  h += `</div></div>`;
+  return h;
+}
+
+/* ---------- 내보내기 ---------- */
+function download(name, data, type){
+  const blob = data instanceof Blob ? data : new Blob([data], { type });
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+function expNeis(){
+  const d = D();
+  const wb = XLSX.read(bufFromB64(d.b64), { type: "array" });
+  const ws = wb.Sheets[d.sheetName];
+  let changed = 0;
+  for(const s of d.students){
+    const f = selOf(d, s, "final");
+    for(const c of d.cols){
+      const v = f.has(c.code) ? 1 : 0;
+      if(v !== s.orig[c.code]) changed++;
+      const addr = XLSX.utils.encode_cell({ r: s.r, c: c.c });
+      ws[addr] = { t: "n", v };
+    }
+  }
+  const out = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+  download(`${d.entry}입학생_수강신청일괄등록_변경반영${ymd()}.xlsx`, new Blob([out], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+  toast(`승인된 변경 ${changed}칸을 반영해 내려받았습니다`);
+}
+function expLog(){
+  const d = D();
+  const rows = [["번호", "신청일", "학기", "학번", "이름", "고유번호", "빼는 과목", "넣는 과목", "사유", "구체적 사유", "검토 메모", "상태", "처리 의견", "처리 시각"]];
+  reqOrder(d).forEach((r, i) => {
+    const stu = d.stuBy[r.uid]; const to = new Set(r.to), from = new Set(r.from);
+    rows.push([i + 1, r.date, r.sem, stu ? curNo(stu) : r.no, stu ? stu.name : r.name, r.uid,
+      r.from.filter(k => !to.has(k)).map(k => d.colBy[k]?.name).join(", "), r.to.filter(k => !from.has(k)).map(k => d.colBy[k]?.name).join(", "),
+      r.reason, r.reasonTxt || "", r.memo || "", { ok: "승인", no: "반려", pend: "검토 대기" }[r.status], r.decision || "", r.decidedAt ? new Date(r.decidedAt).toLocaleString("ko-KR") : ""]);
+  });
+  const wb = XLSX.utils.book_new(); const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws["!cols"] = [6, 11, 6, 8, 9, 14, 22, 22, 16, 30, 24, 9, 20, 18].map(w => ({ wch: w }));
+  XLSX.utils.book_append_sheet(wb, ws, "변경내역");
+  download(`${d.entry}입학생_수강변경내역${ymd()}.xlsx`, new Blob([XLSX.write(wb, { bookType: "xlsx", type: "array" })]));
+}
+function expSum(){
+  const d = D(); const cnt = counts(d);
+  const rows = [["학기", "선택군", "과목", "최초 신청", "승인 반영", "증감", "검토 대기 포함"]];
+  for(const sem of targetSems(d)) for(const g of d.groups[sem]) for(const c of g.cols) rows.push([sem, g.group, c.name, cnt.orig[c.code], cnt.final[c.code], cnt.final[c.code] - cnt.orig[c.code], cnt.proj[c.code]]);
+  const wb = XLSX.utils.book_new(); const ws = XLSX.utils.aoa_to_sheet(rows); ws["!cols"] = [6, 7, 26, 10, 10, 7, 14].map(w => ({ wch: w }));
+  XLSX.utils.book_append_sheet(wb, ws, "과목별인원");
+  download(`${d.entry}입학생_과목별인원${ymd()}.xlsx`, new Blob([XLSX.write(wb, { bookType: "xlsx", type: "array" })]));
+}
+function backup(){
+  const out = { app: "scr2027", version: 1, savedAt: nowStamp(), slots: {} };
+  for(const [k, d] of Object.entries(S.slot)) if(d) out.slots[k] = { fileName: d.fileName, b64: d.b64, settings: d.settings, requests: d.requests, loadedAt: d.loadedAt };
+  download(`수강변경검토_백업_${ymd()}.json`, JSON.stringify(out), "application/json");
+}
+async function restore(file){
+  try{
+    const j = JSON.parse(await file.text());
+    if(j.app !== "scr2027") throw new Error("이 시스템의 백업 파일이 아닙니다.");
+    if(!confirm("백업 파일로 현재 작업을 바꿀까요? (지금 작업 내용은 사라집니다)")) return;
+    for(const k of Object.keys(SLOTS)){
+      if(j.slots[k]){ S.slot[k] = buildSlot(k, j.slots[k]); saveSlot(k); } else { delete S.slot[k]; store.del("slot:" + k); }
+    }
+    S.ui.stu = null; S.draft = null; toast("백업을 불러왔습니다"); render();
+  }catch(e){ alert("백업을 불러오지 못했습니다.\n" + e.message); }
+}
+
+/* ---------- 인쇄 ---------- */
+function stuPrintPage(d, stu){
+  const o = selOf(d, stu, "orig"), f = selOf(d, stu, "final");
+  const qs = d.requests.filter(q => q.uid === stu.uid && q.status === "ok");
+  let h = `<div class="pg"><h1>${TARGET_YEAR}학년도 ${SLOTS[d.key].grade}학년 수강신청 변경 확인서</h1>
+  <table><tr><th>학번(현재)</th><td>${noTxt(stu)}</td><th>이름</th><td>${esc(stu.name)}</td><th>입학년도</th><td>${d.entry}</td></tr></table>
+  <table><thead><tr><th>학기</th><th>선택군</th><th>최초 신청</th><th>변경 후 (확정)</th></tr></thead><tbody>`;
+  for(const sem of targetSems(d)) for(const g of d.groups[sem]){
+    const a = g.cols.filter(c => o.has(c.code)).map(c => c.name), b = g.cols.filter(c => f.has(c.code)).map(c => c.name);
+    const same = a.join() === b.join();
+    h += `<tr><td>${semLabel(sem)}</td><td>${esc(g.group)}군</td><td>${esc(a.join(", "))}</td><td>${same ? "변경 없음" : "<b>" + esc(b.join(", ")) + "</b>"}</td></tr>`;
+  }
+  h += `</tbody></table>`;
+  if(qs.length) h += `<table><thead><tr><th>신청일</th><th>학기</th><th>사유</th></tr></thead><tbody>${qs.map(q => `<tr><td>${esc(q.date)}</td><td>${semLabel(q.sem)}</td><td>${esc(q.reason)}${q.reasonTxt ? " – " + esc(q.reasonTxt) : ""}</td></tr>`).join("")}</tbody></table>`;
+  h += `<p>위와 같이 수강신청 내용이 변경되었음을 확인합니다.</p><p style="text-align:right">${today().replace(/-/g, ". ")}.</p>
+  <div class="sign"><div>학생 (서명)</div><div>보호자 (서명)</div><div>담임교사 (서명)</div></div></div>`;
+  return h;
+}
+function printHtml(html){ $("#print-area").innerHTML = html; setTimeout(() => window.print(), 50); }
+
+/* ============================================================
+   이벤트
+   ============================================================ */
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-act]"); if(!b) return;
+  const act = b.dataset.act, v = b.dataset.v, d = D();
+  switch(act){
+    case "grade": S.ui.grade = v; S.ui.stu = null; S.draft = null; S.ui.subj = null; render(); break;
+    case "sem": S.ui.sem = Number(v); S.draft = null; render(); break;
+    case "view": S.ui.view = v; render(); window.scrollTo(0, 0); break;
+    case "subj": S.ui.subj = v; S.ui.view = "roster"; render(); window.scrollTo(0, 0); break;
+    case "pick": S.ui.stu = v; S.draft = null; render(); break;
+    case "goto": {
+      S.ui.stu = v; S.draft = null; S.ui.view = "stu"; S.ui.q = ""; S.ui.cls = ""; S.ui.flt = "all";
+      const r = d.requests.find(q => q.uid === v && semList().includes(q.sem)); if(!r && S.ui.sem !== 0){ const any = d.requests.find(q => q.uid === v); if(any) S.ui.sem = Number(any.sem.split("-")[1]); }
+      render(); window.scrollTo(0, 0); break;
+    }
+    case "tog": {
+      const dr = S.draft; const col = d.colBy[v];
+      const grp = d.groups[col.sem].find(g => g.group === col.group); const need = d.settings.pick[col.sem + "|" + col.group] ?? 1;
+      if(dr.sel.has(v)) dr.sel.delete(v);
+      else{
+        const inG = grp.cols.filter(c => dr.sel.has(c.code));
+        if(need === 1 && inG.length >= 1) inG.forEach(c => dr.sel.delete(c.code));
+        else if(inG.length >= need){
+          // 넘치면 이번에 새로 고른 것(기존에 없던 것)부터 빼고, 없으면 안내
+          const fresh = inG.filter(c => !dr.base.has(c.code));
+          if(fresh.length) dr.sel.delete(fresh[fresh.length - 1].code);
+          else { toast(`${col.group}군은 ${need}과목입니다. 뺄 과목을 먼저 눌러 주세요.`); return; }
+        }
+        dr.sel.add(v);
+      }
+      render(); break;
+    }
+    case "reset-draft": S.draft = null; render(); break;
+    case "save": saveDraft(v); break;
+    case "rq-ok": setStatus(v, "ok"); break;
+    case "rq-no": setStatus(v, "no"); break;
+    case "rq-pend": setStatus(v, "pend"); break;
+    case "rq-del": setStatus(v, "del"); break;
+    case "rst": S.ui.rst = v; render(); break;
+    case "rq-all-ok": {
+      const sems = semList(); const q = S.ui.rq.trim();
+      const list = d.requests.filter(r => r.status === "pend" && sems.includes(r.sem) && (!q || (r.name || "").includes(q) || String(r.no).includes(q) || r.to.concat(r.from).some(k => (d.colBy[k]?.name || "").includes(q))));
+      if(!confirm(`검토 대기 ${list.length}건을 모두 승인할까요?`)) return;
+      const t = nowStamp(); list.forEach(r => { r.status = "ok"; r.decidedAt = t; });
+      invalidate(d); saveSlot(d.key); toast(`${list.length}건 승인`); render(); break;
+    }
+    case "exp-neis": expNeis(); break;
+    case "exp-log": expLog(); break;
+    case "exp-sum": expSum(); break;
+    case "backup": backup(); break;
+    case "clear-req": if(confirm(`${SLOTS[d.key].grade}학년 변경 신청 ${d.requests.length}건을 모두 지울까요? (되돌릴 수 없습니다)`)){ d.requests = []; invalidate(d); saveSlot(d.key); S.draft = null; render(); } break;
+    case "clear-slot": if(confirm(`${SLOTS[d.key].grade}학년 파일과 변경 신청을 이 브라우저에서 지울까요?\n(필요하면 먼저 작업 백업을 저장하세요)`)){ delete S.slot[d.key]; store.del("slot:" + d.key); S.ui.stu = null; S.draft = null; render(); } break;
+    case "print-stu": printHtml(stuPrintPage(d, d.stuBy[S.ui.stu])); break;
+    case "print-all": {
+      const ids = [...new Set(d.requests.filter(q => q.status === "ok").map(q => q.uid))].map(id => d.stuBy[id]).filter(Boolean).sort((a, b) => curNo(a) - curNo(b));
+      if(!ids.length) return toast("승인된 변경이 없습니다");
+      printHtml(ids.map(s => stuPrintPage(d, s)).join("")); break;
+    }
+    case "print-roster": {
+      const c = d.colBy[S.ui.subj];
+      const list = d.students.filter(s => selOf(d, s, "final").has(c.code)).sort((a, b) => curNo(a) - curNo(b));
+      printHtml(`<div class="pg"><h1>${TARGET_YEAR}학년도 ${semLabel(c.sem)} ${esc(c.group)}군 「${esc(c.name)}」 수강생 명단 (${list.length}명)</h1><table><thead><tr><th>연번</th><th>학번(현재)</th><th>이름</th><th>비고</th></tr></thead><tbody>${list.map((s, i) => `<tr><td>${i + 1}</td><td>${noTxt(s)}</td><td>${esc(s.name)}</td><td>${selOf(d, s, "orig").has(c.code) ? "" : "변경 추가"}</td></tr>`).join("")}</tbody></table></div>`);
+      break;
+    }
+  }
+});
+document.addEventListener("input", e => {
+  const t = e.target;
+  if(t.id === "q" || t.id === "rq"){
+    S.ui[t.id] = t.value; const pos = t.selectionStart;
+    clearTimeout(t._tm); t._tm = setTimeout(() => { render(); const n = $("#" + t.id); if(n){ n.focus(); n.setSelectionRange(pos, pos); } }, 180);
+  }
+  if(S.draft){
+    if(t.id === "f-reasontxt") S.draft.reasonTxt = t.value;
+    if(t.id === "f-memo") S.draft.memo = t.value;
+    if(t.id === "f-date") S.draft.date = t.value;
+  }
+});
+document.addEventListener("change", e => {
+  const t = e.target; const d = D();
+  if(t.id === "cls"){ S.ui.cls = t.value; render(); }
+  if(t.id === "flt"){ S.ui.flt = t.value; render(); }
+  if(t.id === "subj"){ S.ui.subj = t.value; render(); }
+  if(t.id === "f-reason" && S.draft) S.draft.reason = t.value;
+  if(t.id === "restore" && t.files[0]) restore(t.files[0]);
+  if(!d) return;
+  if(t.id === "s-min"){ d.settings.min = Math.max(0, Number(t.value) || 0); saveSlot(d.key); toast("저장했습니다"); }
+  if(t.id === "s-max"){ d.settings.max = Math.max(0, Number(t.value) || 0); saveSlot(d.key); toast("저장했습니다"); }
+  if(t.dataset.pick){ d.settings.pick[t.dataset.pick] = Math.max(0, Number(t.value) || 0); d.settings.pickGuess = false; invalidate(d); saveSlot(d.key); toast("선택군 규칙을 저장했습니다"); }
+  if(t.dataset.maxby){ if(t.value === "") delete d.settings.maxBy[t.dataset.maxby]; else d.settings.maxBy[t.dataset.maxby] = Math.max(0, Number(t.value) || 0); saveSlot(d.key); }
+});
+document.addEventListener("keydown", e => {
+  if(S.ui.view !== "stu" || !D()) return;
+  if(["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement?.tagName)) return;
+  if(e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+  const list = filteredStudents(D()); if(!list.length) return;
+  e.preventDefault();
+  let i = list.findIndex(s => s.uid === S.ui.stu);
+  i = e.key === "ArrowDown" ? Math.min(list.length - 1, i + 1) : Math.max(0, i - 1);
+  S.ui.stu = list[i].uid; S.draft = null; render();
+});
+
+/* 화면 밝기 */
+(function(){
+  let th = null; try{ th = localStorage.getItem(LS_PREFIX + "theme"); }catch(e){}
+  if(th) document.documentElement.dataset.theme = th;
+  $("#btn-theme").addEventListener("click", () => {
+    const dark = document.documentElement.dataset.theme ? document.documentElement.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+    const nt = dark ? "light" : "dark"; document.documentElement.dataset.theme = nt;
+    try{ localStorage.setItem(LS_PREFIX + "theme", nt); }catch(e){}
+  });
+})();
+
+/* 시작 */
+(function init(){
+  if(typeof XLSX === "undefined"){ $("#view").innerHTML = `<div class="notice err">엑셀 처리 도구를 불러오지 못했습니다.</div>`; return; }
+  for(const k of Object.keys(SLOTS)){
+    const raw = store.get("slot:" + k);
+    if(raw){ try{ S.slot[k] = buildSlot(k, raw); }catch(e){ console.error(e); } }
+  }
+  if(!S.slot.g2 && S.slot.g3) S.ui.grade = "g3";
+  render();
+})();
+</script>
+</body>
+</html>
