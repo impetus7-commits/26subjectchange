@@ -394,7 +394,7 @@ function counts(d){
   for(const s of d.students){
     const o = selOf(d, s, "orig"), f = selOf(d, s, "final"), p = selOf(d, s, "proj");
     o.forEach(k => res.orig[k]++); f.forEach(k => res.final[k]++); p.forEach(k => res.proj[k]++);
-    if(validate(d, f).length) res.bad.add(s.uid);
+    if(validate(d, f).some(isErr)) res.bad.add(s.uid);
   }
   d.cache = res; return res;
 }
@@ -420,7 +420,127 @@ function validate(d, set, onlySem){
       issues.push({ t: "dup", msg: `같은 과목 중복 신청: ${name} (${arr.map(c => c.sem + " " + c.group + "군").join(", ")})` });
     }
   }
+  // 서술형 규칙
+  for(const r of textRules(d).rules){
+    if(r.kind === "info" || r.kind === "bad") continue;
+    if(onlySem && !r.sems.includes(onlySem)) continue;
+    const m = evalRule(r, set);
+    if(m) issues.push({ t: "rule", level: r.level, rule: r.n, msg: `[규칙 ${r.n}] ${m}` });
+  }
   return issues;
+}
+const isErr = i => i.level !== "warn";
+
+/* ---------- 서술형 규칙 ----------
+   한 줄에 규칙 하나. 문장 속 과목 이름과 핵심 낱말을 찾아 규칙으로 바꿉니다.
+   - 조건:  "A를 선택하면 B도 선택해야 한다" / "A 선택 시 B 선택 불가" / "A를 선택하려면 B를 이전 학기에 이수"
+   - 개수:  "A, B, C 중 1과목 이상" / "중 최대 2과목" / "중 1과목만"
+   - 함께 불가: "A와 B는 함께 선택할 수 없다"
+   - 필수:  "A는 필수" / "A 또는 B 필수"
+   - '권장·추천·가급적'이 들어가면 경고(저장은 됨), 그 밖에는 오류(저장 막음)
+   - 과목을 하나도 못 찾거나 형식을 모르면 '안내'로만 보여 줌. '#'으로 시작하면 메모
+   ------------------------------------- */
+const normTxt = s => String(s ?? "").replace(/\s+/g, "").replace(/II/g, "Ⅱ").replace(/I/g, "Ⅰ");
+function nameIndex(d){
+  if(d._nameIdx) return d._nameIdx;
+  const idx = {};
+  for(const c of d.cols){ const k = normTxt(c.name); if(!k) continue; (idx[k] = idx[k] || { name: c.name, codes: [] }).codes.push(c.code); }
+  return d._nameIdx = idx;
+}
+function parseRuleLine(d, line, n){
+  const raw = line.trim();
+  const base = { n, line: raw, level: /(권장|추천|가급적|바람직|되도록)/.test(raw) ? "warn" : "err" };
+  let t = normTxt(raw);
+  const idx = nameIndex(d); const toks = [];
+  for(const key of Object.keys(idx).sort((a, b) => b.length - a.length)){
+    let p;
+    while((p = t.indexOf(key)) >= 0){
+      let codes = idx[key].codes, start = p, label = idx[key].name;
+      const pre = t.slice(Math.max(0, p - 6), p).match(/(\d)-(\d)(학기)?$/);
+      if(pre){ const sem = pre[1] + "-" + pre[2]; const f = codes.filter(c => d.colBy[c].sem === sem); if(f.length){ codes = f; start = p - pre[0].length; label = sem + " " + label; } }
+      const k = toks.length; toks.push({ name: label, codes });
+      t = t.slice(0, start) + "§" + k + "§" + t.slice(p + key.length);
+    }
+  }
+  const order = s2 => [...s2.matchAll(/§(\d+)§/g)].map(m => toks[Number(m[1])]);
+  const all = order(t);
+  const sems = [...new Set(all.flatMap(x => x.codes.map(c => d.colBy[c].sem)))];
+  const names = a => a.map(x => x.name);
+  const NEG = /(불가|없|금지|못|안됨|안된|제외|말것|않)/;
+  if(!all.length) return Object.assign(base, { kind: "info", desc: "과목 이름을 찾지 못해 안내로만 보여 줍니다" });
+  Object.assign(base, { sems, toks: all });
+  // ① 조건 규칙
+  const cm = t.match(/(을|를|이|가|은|는)?(선택|신청|수강|이수|들으)(하면|할경우|한경우|하는경우|할때|시|한학생은|한학생|하는학생은|하려면|면)/);
+  if(cm){
+    const A = order(t.slice(0, cm.index)), rest = t.slice(cm.index + cm[0].length), B = order(rest);
+    if(A.length && B.length){
+      const condAll = /(모두|전부|둘다)/.test(t.slice(0, cm.index));
+      const neg = NEG.test(rest);
+      const prereq = !neg && (/하려면/.test(cm[0]) && /(먼저|이전|앞|선이수|미리)/.test(rest) || /(선이수|이전학기|먼저이수|앞학기|이수했|이수한|이미이수|이미들)/.test(rest));
+      const allB = /(모두|전부|둘다|함께)/.test(rest) && !/(중|또는|이나)/.test(rest);
+      const aTxt = names(A).join(condAll ? "·" : " 또는 "), bTxt = names(B).join(allB ? "·" : " 또는 ");
+      const desc = neg ? `${aTxt}을(를) 고르면 ${names(B).join("·")}은(는) 고를 수 없음`
+        : prereq ? `${aTxt}을(를) 고르려면 그 이전 학기에 ${bTxt} 이수`
+        : `${aTxt}을(를) 고르면 ${bTxt}${allB ? " 모두" : ""} 함께 선택`;
+      return Object.assign(base, { kind: "cond", A, B, condAll, neg, prereq, allB, desc, _sem: c => d.colBy[c].sem });
+    }
+  }
+  // ② 개수 규칙
+  const nm = t.match(/(최소|최대)?(\d+)과목(이상|이하|까지|이내|만|만큼)?/);
+  if(nm && all.length >= 2){
+    const k = Number(nm[2]); let min = k, max = k;
+    if(nm[1] === "최소" || nm[3] === "이상") max = Infinity;
+    if(nm[1] === "최대" || ["이하", "까지", "이내"].includes(nm[3])) min = 0;
+    const desc = `${names(all).join(", ")} 중 ${min === max ? k + "과목" : min === 0 ? "최대 " + k + "과목" : k + "과목 이상"}`;
+    return Object.assign(base, { kind: "count", set: all, min, max, desc });
+  }
+  // ③ 함께 선택 불가
+  if(all.length >= 2 && /(함께|동시|같이|중복|둘중하나만|하나만|한과목만)/.test(t) && (NEG.test(t) || /하나만|한과목만/.test(t)))
+    return Object.assign(base, { kind: "count", set: all, min: 0, max: 1, desc: `${names(all).join(", ")} 중 하나만 (함께 선택 불가)` });
+  // ④ 필수
+  if(/(필수|반드시|꼭|해야|권장|추천|바람직)/.test(t)){
+    const any = all.length > 1 && /(또는|중|이나|혹은)/.test(t);
+    return Object.assign(base, { kind: "req", set: all, any, desc: `${names(all).join(any ? " 또는 " : "·")} ${any ? "중 하나 이상 " : ""}${base.level === "warn" ? "선택 권장" : "반드시 선택"}` });
+  }
+  return Object.assign(base, { kind: "info", desc: "형식을 알 수 없어 안내로만 보여 줍니다 (과목: " + names(all).join(", ") + ")" });
+}
+function textRules(d){
+  const text = d.settings.rulesText || "";
+  if(d._rules && d._rules.text === text) return d._rules;
+  const rules = []; let n = 0;
+  for(const line of text.split(/\r?\n/)){
+    const l = line.trim(); if(!l || /^(#|\/\/)/.test(l)) continue;
+    rules.push(parseRuleLine(d, l, ++n));
+  }
+  return d._rules = { text, rules };
+}
+function evalRule(r, set){
+  const has = x => x.codes.some(c => set.has(c));
+  const nm = a => a.map(x => x.name).join(", ");
+  if(r.kind === "cond"){
+    const hit = r.condAll ? r.A.every(has) : r.A.some(has);
+    if(!hit) return null;
+    const aHit = r.A.filter(has);
+    if(r.neg){ const bad = r.B.filter(has); return bad.length ? `${nm(aHit)} 선택 시 ${nm(bad)}은(는) 선택할 수 없음` : null; }
+    if(r.prereq){
+      const semA = aHit.flatMap(x => x.codes.filter(c => set.has(c))).map(c => r._sem(c)).sort()[0];
+      const ok = r.B.some(x => x.codes.some(c => set.has(c) && r._sem(c) < semA));
+      return ok ? null : `${nm(aHit)}을(를) 들으려면 이전 학기에 ${r.B.map(x => x.name).join(" 또는 ")} 이수가 필요함`;
+    }
+    const ok = r.allB ? r.B.every(has) : r.B.some(has);
+    return ok ? null : `${nm(aHit)} 선택 시 ${r.B.map(x => x.name).join(r.allB ? "·" : " 또는 ")} 선택 필요`;
+  }
+  if(r.kind === "count"){
+    const n = r.set.filter(has).length;
+    if(n < r.min) return `${nm(r.set)} 중 ${r.min}과목 이상 필요 (현재 ${n}과목)`;
+    if(n > r.max) return r.max === 1 && r.min === 0 ? `${nm(r.set.filter(has))}은(는) 함께 선택할 수 없음` : `${nm(r.set)} 중 최대 ${r.max}과목 (현재 ${n}과목)`;
+    return null;
+  }
+  if(r.kind === "req"){
+    const ok = r.any ? r.set.some(has) : r.set.every(has);
+    return ok ? null : `${r.set.filter(x => !has(x)).map(x => x.name).join(r.any ? " 또는 " : ", ")} ${r.level === "warn" ? "선택 권장" : "반드시 선택"}`;
+  }
+  return null;
 }
 function curNo(stu){ return stu.no[2] || stu.no[1] || stu.no[0] || 0; }
 function clsOf(stu){ return Math.floor(curNo(stu) / 100) % 100; }
@@ -518,7 +638,7 @@ async function loadFile(file, hint){
     if(old && old.requests.length){
       if(!confirm(`${SLOTS[key].grade}학년에 이미 변경 신청 ${old.requests.length}건이 있습니다.\n새 파일을 '최초 신청' 기준으로 바꾸고 기존 변경 신청은 그대로 유지할까요?\n(학생 고유번호로 연결됩니다. 새 파일에 없는 학생의 신청은 표시되지 않습니다.)`)) return;
     }
-    const raw = { fileName: file.name, b64: b64FromBuf(buf), loadedAt: nowStamp(), settings: old ? { min: old.settings.min, max: old.settings.max, classSize: old.settings.classSize, maxBy: old.settings.maxBy } : null, requests: old ? old.requests : [] };
+    const raw = { fileName: file.name, b64: b64FromBuf(buf), loadedAt: nowStamp(), settings: old ? { min: old.settings.min, max: old.settings.max, classSize: old.settings.classSize, maxBy: old.settings.maxBy, rulesText: old.settings.rulesText } : null, requests: old ? old.requests : [] };
     S.slot[key] = buildSlot(key, raw);
     saveSlot(key);
     S.ui.grade = key; S.ui.stu = null; S.draft = null;
@@ -669,7 +789,8 @@ function stuPanel(d, stu){
   // 변경 내용 & 저장
   const adds = [...draft.sel].filter(k => !draft.base.has(k)), dels = [...draft.base].filter(k => !draft.sel.has(k));
   const changed = adds.length + dels.length > 0;
-  const issues = sems.flatMap(sem => validate(d, draft.sel, sem));
+  const allIss = [...new Map(sems.flatMap(sem => validate(d, draft.sel, sem)).map(i => [i.msg, i])).values()];
+  const issues = allIss.filter(isErr), warns = allIss.filter(i => !isErr(i));
   const min = Number(d.settings.min) || 0;
   const capWarn = [];
   for(const k of dels){ const n = cnt.proj[k] - 1; if(min && n < min) capWarn.push(`${d.colBy[k].name}: ${cnt.proj[k]}명 → ${n}명 (최소 ${min}명 미만)`); }
@@ -680,7 +801,11 @@ function stuPanel(d, stu){
   }else{
     h += `<div><b>변경 내용</b> ${dels.map(k => `<span class="chip-in del">${esc(d.colBy[k].sem)} ${esc(d.colBy[k].name)}</span>`).join("")} → ${adds.map(k => `<span class="chip-in add">${esc(d.colBy[k].sem)} ${esc(d.colBy[k].name)}</span>`).join("")}</div>`;
     if(issues.length) h += `<div class="notice err"><b>저장할 수 없습니다</b><ul>${issues.map(i => `<li>${esc(i.msg)}</li>`).join("")}</ul></div>`;
-    else h += `<div class="notice ok">선택군 과목 수와 중복 이수 점검을 통과했습니다.</div>`;
+    else h += `<div class="notice ok">선택군 과목 수·중복 이수·서술형 규칙 점검을 통과했습니다.</div>`;
+    const seen = new Set(allIss.map(i => i.msg));
+    const other = validate(d, draft.sel).filter(i => !seen.has(i.msg));
+    if(other.length) h += `<div class="notice info"><b>다른 학기에서 확인이 필요한 내용</b> (이번 저장은 막지 않음)<ul>${other.map(i => `<li>${esc(i.msg)}</li>`).join("")}</ul></div>`;
+    if(warns.length) h += `<div class="notice warn"><b>권장 사항 (저장은 됩니다)</b><ul>${warns.map(i => `<li>${esc(i.msg)}</li>`).join("")}</ul></div>`;
     if(capWarn.length) h += `<div class="notice warn"><b>인원 확인</b><ul>${capWarn.map(x => `<li>${esc(x)}</li>`).join("")}</ul></div>`;
     h += `<div class="form-grid">
       <label for="f-reason">변경 사유</label><div class="btns"><select id="f-reason">${REASONS.map(r => `<option ${r === draft.reason ? "selected" : ""}>${r}</option>`).join("")}</select><input type="text" id="f-reasontxt" placeholder="구체적 사유 (예: 간호학과 희망 → 생명과학 필요)" value="${esc(draft.reasonTxt)}" style="flex:1;min-width:200px"></div>
@@ -689,6 +814,8 @@ function stuPanel(d, stu){
     </div>
     <div class="btns"><button class="btn" data-act="save" data-v="pend" ${issues.length ? "disabled" : ""}>검토 대기로 저장</button><button class="btn ok" data-act="save" data-v="ok" ${issues.length ? "disabled" : ""}>바로 승인</button><button class="btn" data-act="reset-draft">되돌리기</button></div>`;
   }
+  const infos = textRules(d).rules.filter(r => r.kind === "info");
+  if(infos.length) h += `<details class="small"><summary class="muted" style="cursor:pointer">학교 안내 규칙 ${infos.length}개 (자동 점검 안 함)</summary><ul style="margin:6px 0 0;padding-left:18px">${infos.map(r => `<li>${esc(r.line)}</li>`).join("")}</ul></details>`;
   h += `</div></div>`;
   // 이력
   const hist = d.requests.filter(q => q.uid === stu.uid).sort((a, b) => b.createdAt < a.createdAt ? -1 : 1);
@@ -819,7 +946,7 @@ function setStatus(id, st){
       const set = selOf(d, stu, "final", r.id);
       for(const c of d.cols) if(c.sem === r.sem) set.delete(c.code);
       r.to.forEach(k => set.add(k));
-      const iss = validate(d, set);
+      const iss = validate(d, set).filter(isErr);
       if(iss.length && !confirm(`승인하면 규칙에 맞지 않습니다.\n- ${iss.map(i => i.msg).join("\n- ")}\n\n그래도 승인할까요?`)) return;
     }
   }
@@ -899,10 +1026,10 @@ function viewCheck(){
     if(uniq.length) rows.push({ s, iss: uniq });
   }
   let h = ctxLine("규칙 점검");
-  h += `<p class="muted small" style="margin-top:-6px">승인 반영 기준으로 모든 학생을 점검합니다. 규칙: ① 선택군마다 정해진 과목 수 ② 같은 이름 과목을 두 학기에 중복 신청하지 않기 (규칙은 [파일·설정·내보내기]에서 조정)</p>`;
+  h += `<p class="muted small" style="margin-top:-6px">승인 반영 기준으로 모든 학생을 점검합니다. 규칙: ① 선택군마다 정해진 과목 수 ② 같은 이름 과목을 두 학기에 중복 신청하지 않기 ③ 서술형 규칙 ${textRules(d).rules.filter(r => r.kind !== "info").length}개 (규칙은 [파일·설정·내보내기]에서 조정) · <span class="badge no">오류</span> <span class="badge warn">권장</span></p>`;
   if(!rows.length) return h + `<div class="card"><div class="empty">🎉 규칙에 어긋나는 학생이 없습니다</div></div>`;
   h += `<div class="card"><div class="card-h"><h3>확인이 필요한 학생 ${rows.length}명</h3></div><div class="tbl-wrap"><table><thead><tr><th>학번</th><th>이름</th><th>내용</th></tr></thead><tbody>`;
-  for(const r of rows) h += `<tr><td class="num">${noTxt(r.s)}</td><td><button class="btn sm" data-act="goto" data-v="${esc(r.s.uid)}">${esc(r.s.name)}</button></td><td>${r.iss.map(i => esc(i.msg)).join("<br>")}</td></tr>`;
+  for(const r of rows) h += `<tr><td class="num">${noTxt(r.s)}</td><td><button class="btn sm" data-act="goto" data-v="${esc(r.s.uid)}">${esc(r.s.name)}</button></td><td>${r.iss.map(i => `<span class="badge ${isErr(i) ? "no" : "warn"}">${isErr(i) ? "오류" : "권장"}</span> ${esc(i.msg)}`).join("<br>")}</td></tr>`;
   return h + `</tbody></table></div></div>`;
 }
 
@@ -940,7 +1067,57 @@ function viewSet(){
     h += `</tbody></table></div></div>`;
   }
   h += `</div></div>`;
+  h += rulesCard(d);
   return h;
+}
+function ruleExamples(d){
+  const ts = targetSems(d); const g = d.groups[ts[0]] || []; const g2 = d.groups[ts[1]] || [];
+  const nm = (grp, i) => grp?.cols[i]?.name;
+  const a = nm(g[0], 0), b = nm(g[0], 1), c = nm(g[0], 2), x = nm(g2[0], 0), y = nm(g2[0], 1);
+  const ex = [];
+  if(a && x) ex.push(`${a}을(를) 선택하면 ${x}도 선택해야 한다`);
+  if(a && b) ex.push(`${a}와(과) ${b}는 함께 선택할 수 없다`);
+  if(a && b && c) ex.push(`${a}, ${b}, ${c} 중 1과목 이상 선택`);
+  if(x && y) ex.push(`${x} 또는 ${y}를 선택하는 것을 권장`);
+  if(x && a) ex.push(`${ts[1] || ""} ${x}을(를) 선택하려면 이전 학기에 ${a}을(를) 이수해야 한다`.trim());
+  ex.push(`# '#'으로 시작하는 줄은 메모입니다`);
+  return ex;
+}
+function rulesCard(d){
+  const R = textRules(d).rules; const cnt = counts(d);
+  const viol = r => { if(r.kind === "info") return ""; let n = 0; for(const s of d.students){ if(evalRule(r, selOf(d, s, "final"))) n++; } return n; };
+  const kindTxt = { cond: "조건", count: "개수", req: "필수", info: "안내" };
+  let h = `<div class="card" style="margin-top:14px"><div class="card-h"><h3>✍️ 서술형 규칙 · ${SLOTS[d.key].grade}학년</h3><span class="muted small">한 줄에 규칙 하나 · 문장 속 과목 이름과 낱말로 자동 해석 · 학생 변경 저장·승인·규칙 점검에 적용</span></div>
+  <div class="card-b grid">
+    <div class="grid" style="grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);align-items:start">
+      <div><textarea id="s-rules" rows="9" placeholder="예) 미적분Ⅱ를 선택하면 기하도 선택해야 한다&#10;예) 물리학과 화학은 함께 선택할 수 없다&#10;예) 세계사, 동아시아 역사 기행 중 1과목 이상 선택" aria-label="서술형 규칙">${esc(d.settings.rulesText || "")}</textarea>
+        <div class="btns" style="margin-top:8px"><button class="btn primary" data-act="rules-apply">규칙 적용·저장</button><span class="small muted" style="align-self:center">적용하면 아래 해석 결과와 위반 학생 수가 바뀝니다</span></div></div>
+      <div class="small"><b>쓰는 법</b>
+        <ul style="margin:4px 0 8px;padding-left:18px">
+          <li><b>조건</b> · "A를 선택하면 B도 선택" / "A 선택 시 B 선택 불가"</li>
+          <li><b>선수 과목</b> · "A를 선택하려면 이전 학기에 B 이수"</li>
+          <li><b>개수</b> · "A, B, C 중 1과목 이상" · "중 최대 2과목" · "중 1과목만"</li>
+          <li><b>함께 불가</b> · "A와 B는 함께 선택할 수 없다"</li>
+          <li><b>필수</b> · "A는 필수" · "A 또는 B 필수"</li>
+          <li><b>권장·추천·가급적</b>이 있으면 <span class="badge warn">권장</span>(저장은 됨), 없으면 <span class="badge no">오류</span>(저장 막음)</li>
+          <li>같은 이름 과목이 여러 학기에 있으면 "3-1 운동과 건강"처럼 학기를 앞에 붙이세요</li>
+          <li>과목을 못 찾으면 <span class="badge">안내</span>로만 학생 화면에 보입니다</li>
+        </ul>
+        <b>이 학년 과목으로 만든 예시</b> <span class="muted">(누르면 끝에 추가)</span>
+        <div class="grid" style="gap:4px;margin-top:4px">${ruleExamples(d).map(e => `<button class="btn sm" style="text-align:left;font-weight:500" data-act="rules-ex" data-v="${esc(e)}">${esc(e)}</button>`).join("")}</div>
+      </div>
+    </div>`;
+  if(R.length){
+    h += `<div class="tbl-wrap" style="max-height:none"><table><thead><tr><th class="num">번호</th><th>적은 문장</th><th>시스템이 이해한 규칙</th><th>종류</th><th class="num">위반 학생<br><span class="muted">(승인 반영)</span></th></tr></thead><tbody>`;
+    for(const r of R){
+      const v = viol(r);
+      h += `<tr><td class="num">${r.n}</td><td>${esc(r.line)}</td><td>${r.kind === "info" ? `<span class="muted">${esc(r.desc)}</span>` : esc(r.desc)}</td>
+        <td>${r.kind === "info" ? '<span class="badge">안내</span>' : `<span class="badge">${kindTxt[r.kind]}</span> <span class="badge ${r.level === "warn" ? "warn" : "no"}">${r.level === "warn" ? "권장" : "오류"}</span>`}</td>
+        <td class="num">${v === "" ? "" : v ? `<b style="color:var(--del)">${v}명</b>` : "0명"}</td></tr>`;
+    }
+    h += `</tbody></table></div>`;
+  }
+  return h + `</div></div>`;
 }
 
 /* ---------- 내보내기 ---------- */
@@ -1061,6 +1238,11 @@ document.addEventListener("click", e => {
       render(); break;
     }
     case "reset-draft": S.draft = null; render(); break;
+    case "rules-apply": {
+      d.settings.rulesText = $("#s-rules").value; d._rules = null; invalidate(d); saveSlot(d.key); S.draft = null;
+      const R = textRules(d).rules; toast(`규칙 ${R.length}줄을 적용했습니다 (점검 ${R.filter(r => r.kind !== "info").length} · 안내 ${R.filter(r => r.kind === "info").length})`); render(); break;
+    }
+    case "rules-ex": { const ta = $("#s-rules"); ta.value = (ta.value.trim() ? ta.value.replace(/\s*$/, "") + "\n" : "") + v; ta.focus(); break; }
     case "save": saveDraft(v); break;
     case "rq-ok": setStatus(v, "ok"); break;
     case "rq-no": setStatus(v, "no"); break;
