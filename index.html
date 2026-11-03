@@ -263,7 +263,7 @@ const SLOTS = {
   g3: { entry: 2025, grade: 3 },
 };
 const REASONS = ["진로(희망 학과) 변경", "학업 부담·적성", "대학 권장과목 반영", "시간표·정원 조정", "기타"];
-const DEFAULT_SETTINGS = { min: 13, max: 0, pick: {}, maxBy: {} };
+const DEFAULT_SETTINGS = { min: 13, max: 0, classSize: 25, pick: {}, maxBy: {} };
 
 const S = {
   slot: {},              // g2/g3 → 데이터
@@ -527,7 +527,7 @@ async function loadFile(file, hint){
     if(old && old.requests.length){
       if(!confirm(`${SLOTS[key].grade}학년에 이미 변경 신청 ${old.requests.length}건이 있습니다.\n새 파일을 '최초 신청' 기준으로 바꾸고 기존 변경 신청은 그대로 유지할까요?\n(학생 고유번호로 연결됩니다. 새 파일에 없는 학생의 신청은 표시되지 않습니다.)`)) return;
     }
-    const raw = { fileName: file.name, b64: b64FromBuf(buf), loadedAt: nowStamp(), settings: old ? { min: old.settings.min, max: old.settings.max, maxBy: old.settings.maxBy } : null, requests: old ? old.requests : [] };
+    const raw = { fileName: file.name, b64: b64FromBuf(buf), loadedAt: nowStamp(), settings: old ? { min: old.settings.min, max: old.settings.max, classSize: old.settings.classSize, maxBy: old.settings.maxBy } : null, requests: old ? old.requests : [] };
     S.slot[key] = buildSlot(key, raw);
     saveSlot(key);
     S.ui.grade = key; S.ui.stu = null; S.draft = null;
@@ -744,6 +744,47 @@ function saveDraft(status){
   render();
 }
 
+/* ---------- 승인 시 영향 ---------- */
+function classNeed(d, n){ const k = Number(d.settings.classSize) || 0; return !n ? 0 : k ? Math.ceil(n / k) : 1; }
+// reqs(검토 대기)를 모두 승인했을 때 인원이 바뀌는 과목
+function pendImpact(d, reqs){
+  const cnt = counts(d); const after = Object.assign({}, cnt.final);
+  const by = {};
+  for(const r of reqs) (by[r.uid] = by[r.uid] || []).push(r);
+  for(const [id, rs] of Object.entries(by)){
+    const stu = d.stuBy[id]; if(!stu) continue;
+    const before = selOf(d, stu, "final"); const set = new Set(before);
+    for(const r of rs.sort((a, b) => a.createdAt < b.createdAt ? -1 : 1)){
+      for(const c of d.cols) if(c.sem === r.sem) set.delete(c.code);
+      r.to.forEach(k => set.add(k));
+    }
+    for(const k of set) if(!before.has(k)) after[k]++;
+    for(const k of before) if(!set.has(k)) after[k]--;
+  }
+  return d.cols.filter(c => after[c.code] !== cnt.final[c.code]).map(c => ({ c, before: cnt.final[c.code], after: after[c.code] }));
+}
+function impactCard(d, reqs){
+  const rows = pendImpact(d, reqs); const min = Number(d.settings.min) || 0; const k = Number(d.settings.classSize) || 0;
+  let h = `<div class="card" style="margin-bottom:14px"><div class="card-h"><h3>검토 대기 ${reqs.length}건을 모두 승인하면 · 인원이 바뀌는 과목 ${rows.length}개</h3>
+    <span class="muted small">학급 수 = 인원 ÷ 학급당 정원 ${k ? k + "명" : "(미설정)"} (올림) · 정원은 [파일·설정·내보내기]에서 변경</span></div>`;
+  if(!rows.length) return h + `<div class="card-b muted">서로 맞바뀌어 과목별 인원 변동이 없습니다.</div></div>`;
+  const chg = rows.filter(r => classNeed(d, r.before) !== classNeed(d, r.after)).length;
+  h += `<div class="card-b small" style="padding-bottom:0">${chg ? `<span class="badge warn">학급 수가 바뀌는 과목 ${chg}개</span>` : '<span class="badge ok">학급 수 변동 없음</span>'}</div>
+  <div class="tbl-wrap" style="max-height:none"><table><thead><tr><th>학기</th><th>선택군</th><th>과목</th><th class="num">현재 인원</th><th class="num">승인 후</th><th class="num">증감</th><th class="num">학급 수 (현재 → 승인 후)</th><th>확인</th></tr></thead><tbody>`;
+  for(const r of rows){
+    const d0 = classNeed(d, r.before), d1 = classNeed(d, r.after), df = r.after - r.before, mx = maxOf(d, r.c.code);
+    const note = [];
+    if(r.after === 0) note.push('<span class="badge warn">0명</span>');
+    else if(min && r.after < min) note.push(`<span class="badge warn">${min}명 미만</span>`);
+    if(mx && r.after > mx) note.push(`<span class="badge no">정원 ${mx}명 초과</span>`);
+    if(d0 !== d1) note.push(`<span class="badge ${d1 > d0 ? "ok" : "no"}">학급 ${d1 > d0 ? "증설" : "감축"}</span>`);
+    h += `<tr><td class="small">${semLabel(r.c.sem)}</td><td>${esc(r.c.group)}군</td><td><button class="btn sm" data-act="subj" data-v="${esc(r.c.code)}" title="명단 보기">${esc(r.c.name)}</button></td>
+      <td class="num">${r.before}</td><td class="num"><b>${r.after}</b></td><td class="num"><span class="${df > 0 ? "d-up" : "d-dn"}">${df > 0 ? "+" : ""}${df}</span></td>
+      <td class="num">${d0 === d1 ? d0 : `${d0} → <b>${d1}</b>`}</td><td>${note.join(" ")}</td></tr>`;
+  }
+  return h + `</tbody></table></div></div>`;
+}
+
 /* ---------- 변경 신청 목록 ---------- */
 function viewReq(){
   const d = D(); const sems = semList(); const q = S.ui.rq.trim();
@@ -752,6 +793,7 @@ function viewReq(){
     .sort((a, b) => (a.date + a.createdAt) < (b.date + b.createdAt) ? -1 : 1);
   const c = st => all.filter(r => st === "all" || r.status === st).length;
   let h = ctxLine("변경 신청 목록");
+  if(S.ui.rst === "pend" && list.length) h += impactCard(d, list);
   h += `<div class="card"><div class="card-h">
     <div class="seg">${[["pend", "검토 대기"], ["ok", "승인"], ["no", "반려"], ["all", "전체"]].map(([v, l]) => `<button data-act="rst" data-v="${v}" aria-pressed="${S.ui.rst === v}">${l} ${c(v)}</button>`).join("")}</div>
     <input type="search" id="rq" placeholder="이름·학번·과목 검색" value="${esc(S.ui.rq)}" style="flex:1;min-width:160px" aria-label="신청 검색">
@@ -816,18 +858,43 @@ function viewRoster(){
     <div class="tbl-wrap"><table><thead><tr><th>학번</th><th>이름</th><th>상태</th></tr></thead><tbody>
     ${rows.map(x => `<tr><td class="num">${noTxt(x.s)}</td><td><button class="btn sm" data-act="goto" data-v="${esc(x.s.uid)}">${esc(x.s.name)}</button></td><td>${x.f ? (x.o ? '<span class="chip-in keep">유지</span>' : '<span class="chip-in add">추가(승인)</span>') : x.o ? '<span class="chip-in del">빠짐(승인)</span>' : ""}${x.p !== x.f ? ` <span class="badge pend">${x.p ? "추가 대기" : "빠짐 대기"}</span>` : ""}</td></tr>`).join("") || `<tr><td colspan="3" class="muted">신청한 학생이 없습니다</td></tr>`}
     </tbody></table></div></div>
-  <div class="card"><div class="card-h"><h3>반별 신청 인원 (승인 반영)</h3><span class="muted small">현재 학반 기준</span></div>`;
+  <div class="card"><div class="card-h"><h3>반별 변경 신청 인원</h3><span class="muted small">현재 학반 기준 · 승인 + 검토 대기 (반려 제외) · 최초 신청과 비교</span></div>`;
+  h += classChangeTables(d, sems, classes);
+  h += `</div></div>`;
+  return h;
+}
+
+function classChangeTables(d, sems, classes){
+  // 학생별로 최초 신청 ↔ (승인+대기) 비교
+  const live = d.requests.filter(r => sems.includes(r.sem) && r.status !== "no");
+  const ids = [...new Set(live.map(r => r.uid))].map(id => d.stuBy[id]).filter(Boolean);
+  const okIds = new Set(live.filter(r => r.status === "ok").map(r => r.uid)), pdIds = new Set(live.filter(r => r.status === "pend").map(r => r.uid));
+  if(!ids.length) return `<div class="empty">아직 변경 신청이 없습니다</div>`;
+  const add = {}, del = {};
+  for(const s of ids){
+    const o = selOf(d, s, "orig"), p = selOf(d, s, "proj"), k = clsOf(s);
+    for(const c of d.cols){ if(!sems.includes(c.sem)) continue;
+      if(p.has(c.code) && !o.has(c.code)) ((add[c.code] = add[c.code] || {})[k] = (add[c.code][k] || 0) + 1);
+      if(o.has(c.code) && !p.has(c.code)) ((del[c.code] = del[c.code] || {})[k] = (del[c.code][k] || 0) + 1);
+    }
+  }
+  const sumv = o => Object.values(o || {}).reduce((a, b) => a + b, 0);
+  let h = `<div class="tbl-wrap" style="max-height:none"><table><thead><tr><th>신청 학생 수</th>${classes.map(c => `<th class="num">${c}반</th>`).join("")}<th class="num">계</th></tr></thead><tbody>`;
+  const row = (label, set) => { const per = classes.map(k => ids.filter(s => clsOf(s) === k && set(s)).length); return `<tr><td>${label}</td>${per.map(n => `<td class="num ${n ? "" : "muted"}">${n || "·"}</td>`).join("")}<td class="num"><b>${per.reduce((a, b) => a + b, 0)}</b></td></tr>`; };
+  h += row("전체", () => true) + row('<span class="badge ok">승인</span>', s => okIds.has(s.uid)) + row('<span class="badge pend">검토 대기</span>', s => pdIds.has(s.uid));
+  h += `</tbody></table></div>`;
   for(const sem of sems){
     for(const g of d.groups[sem]){
-      h += `<div class="card-b" style="padding-bottom:0"><b>${semLabel(sem)} ${esc(g.group)}군</b></div><div class="tbl-wrap" style="max-height:none"><table><thead><tr><th>과목</th>${classes.map(c => `<th class="num">${c}반</th>`).join("")}<th class="num">계</th></tr></thead><tbody>`;
-      for(const c of g.cols){
-        const per = classes.map(k => d.students.filter(s => clsOf(s) === k && selOf(d, s, "final").has(c.code)).length);
-        h += `<tr><td>${esc(c.name)}</td>${per.map(n => `<td class="num ${n ? "" : "muted"}">${n || "·"}</td>`).join("")}<td class="num"><b>${cnt.final[c.code]}</b></td></tr>`;
+      const cols = g.cols.filter(c => add[c.code] || del[c.code]);
+      if(!cols.length) continue;
+      h += `<div class="card-b" style="padding-bottom:0"><b>${semLabel(sem)} ${esc(g.group)}군</b> <span class="muted small"><span class="d-up">+넣는 학생</span> / <span class="d-dn">−빼는 학생</span></span></div><div class="tbl-wrap" style="max-height:none"><table><thead><tr><th>과목</th>${classes.map(c => `<th class="num">${c}반</th>`).join("")}<th class="num">계</th></tr></thead><tbody>`;
+      for(const c of cols){
+        const cell = (a, b) => (a || b) ? `${a ? `<span class="d-up">+${a}</span>` : ""}${a && b ? " " : ""}${b ? `<span class="d-dn">−${b}</span>` : ""}` : '<span class="muted">·</span>';
+        h += `<tr><td><button class="btn sm" data-act="subj" data-v="${esc(c.code)}" title="명단 보기">${esc(c.name)}</button></td>${classes.map(k => `<td class="num">${cell(add[c.code]?.[k], del[c.code]?.[k])}</td>`).join("")}<td class="num"><b>${cell(sumv(add[c.code]), sumv(del[c.code]))}</b></td></tr>`;
       }
       h += `</tbody></table></div>`;
     }
   }
-  h += `</div></div>`;
   return h;
 }
 
@@ -869,6 +936,7 @@ function viewSet(){
   </div></div>
   <div class="card"><div class="card-h"><h3>👥 인원 기준</h3></div><div class="card-b form-grid">
     <label for="s-min">최소 개설 인원</label><div><input type="number" id="s-min" min="0" value="${esc(d.settings.min)}" style="width:90px"> 명 <span class="small muted">미만이면 '기준 미달' 표시 (0 = 사용 안 함)</span></div>
+    <label for="s-cls">학급당 정원</label><div><input type="number" id="s-cls" min="0" value="${esc(d.settings.classSize)}" style="width:90px"> 명 <span class="small muted">과목별 학급 수 = 인원 ÷ 정원 (올림)</span></div>
     <label for="s-max">과목 최대 인원</label><div><input type="number" id="s-max" min="0" value="${esc(d.settings.max)}" style="width:90px"> 명 <span class="small muted">초과하면 경고 (0 = 제한 없음)</span></div>
   </div></div>
   </div>
@@ -1056,6 +1124,7 @@ document.addEventListener("change", e => {
   if(t.id === "restore" && t.files[0]) restore(t.files[0]);
   if(!d) return;
   if(t.id === "s-min"){ d.settings.min = Math.max(0, Number(t.value) || 0); saveSlot(d.key); toast("저장했습니다"); }
+  if(t.id === "s-cls"){ d.settings.classSize = Math.max(0, Number(t.value) || 0); saveSlot(d.key); toast("저장했습니다"); }
   if(t.id === "s-max"){ d.settings.max = Math.max(0, Number(t.value) || 0); saveSlot(d.key); toast("저장했습니다"); }
   if(t.dataset.pick){ d.settings.pick[t.dataset.pick] = Math.max(0, Number(t.value) || 0); d.settings.pickGuess = false; invalidate(d); saveSlot(d.key); toast("선택군 규칙을 저장했습니다"); }
   if(t.dataset.maxby){ if(t.value === "") delete d.settings.maxBy[t.dataset.maxby]; else d.settings.maxBy[t.dataset.maxby] = Math.max(0, Number(t.value) || 0); saveSlot(d.key); }
